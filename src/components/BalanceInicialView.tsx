@@ -134,35 +134,39 @@ export default function BalanceInicialView() {
   };
 
   const createAndAddAccount = async () => {
-    if (!showPicker || !searchTerm) return;
+    if (!showPicker) return;
     
-    // Si el término de búsqueda es un número, lo usamos como cta, si no, es descripción
-    const isNumber = /^\d+$/.test(searchTerm);
-    const newCta = isNumber ? searchTerm : '';
-    const newDesc = !isNumber ? searchTerm.toUpperCase() : 'NUEVA CUENTA PERSONALIZADA';
+    try {
+      const isNumber = /^\d+$/.test(searchTerm);
+      const newCta = isNumber ? searchTerm : '00';
+      const newDesc = !isNumber ? searchTerm.toUpperCase() : 'NUEVA CUENTA PERSONALIZADA';
 
-    const newItem: BalanceInicialItem = {
-      id: `custom-${Date.now()}`,
-      cta: newCta,
-      desc: newDesc,
-      section: showPicker.section,
-      debe: 0,
-      haber: 0
-    };
+      const newItem: BalanceInicialItem = {
+        id: `custom-${Date.now()}`,
+        cta: newCta,
+        desc: newDesc,
+        section: showPicker.section,
+        debe: 0,
+        haber: 0
+      };
 
-    // Guardar en el Plan Contable también
-    if (newCta) {
+      // Guardar en el Plan Contable Maestro
       await saveAccount({
         cta: newCta,
         description: newDesc,
         type: 'Balance'
       });
-    }
 
-    await saveBalanceInicialItem(newItem);
-    setShowPicker(null);
-    setSearchTerm('');
-    toast.success('Cuenta creada e insertada');
+      // Insertar en el Balance Inicial
+      await saveBalanceInicialItem(newItem);
+      
+      setShowPicker(null);
+      setSearchTerm('');
+      toast.success('Cuenta creada con éxito');
+    } catch (error) {
+      console.error('Error al crear cuenta:', error);
+      toast.error('No se pudo crear la cuenta');
+    }
   };
 
   const renderSection = (title: string, section: SectionType) => (
@@ -200,9 +204,27 @@ export default function BalanceInicialView() {
               <h3 className="text-xs font-black uppercase text-app-text flex items-center gap-2"><Search size={14} className="text-blue-600" /> Seleccionar Cuenta</h3>
               <button onClick={() => setShowPicker(null)} className="text-app-muted hover:text-app-text text-xs font-bold">CERRAR</button>
             </div>
-            <div className="p-4">
-              <input autoFocus type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Busca o escribe una cuenta nueva..." className="w-full bg-app-bg border border-app-border rounded-xl px-4 py-3 text-xs outline-none focus:border-blue-600 transition-all text-app-text" />
+            
+            <div className="p-4 bg-app-surface/30">
+              <input autoFocus type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Busca o escribe una cuenta nueva..." className="w-full bg-app-bg border border-app-border rounded-xl px-4 py-3 text-xs outline-none focus:border-blue-600 transition-all text-app-text mb-3" />
+              
+              {/* Opción de Crear Nueva Cuenta - AHORA AL INICIO */}
+              {searchTerm && (
+                <button 
+                  onClick={createAndAddAccount}
+                  className="w-full px-4 py-3 flex items-center gap-3 hover:bg-blue-600/10 transition-colors text-left border border-blue-600/20 rounded-xl bg-blue-600/5 group"
+                >
+                  <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-600/20 group-hover:scale-110 transition-transform">
+                    <PlusCircle size={16} />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-blue-600 uppercase">¿No existe? Crear cuenta personalizada</p>
+                    <p className="text-[9px] font-bold text-app-muted uppercase italic">Insertar "{searchTerm}" en esta sección</p>
+                  </div>
+                </button>
+              )}
             </div>
+
             <div className="max-h-64 overflow-auto py-2">
               {filteredAccounts.map(acc => (
                 <button key={acc.cta} onClick={() => selectAccount(acc.cta, acc.description)} className="w-full px-6 py-3 flex items-center justify-between hover:bg-app-hover transition-colors text-left border-b border-app-border/30 last:border-none">
@@ -213,20 +235,6 @@ export default function BalanceInicialView() {
                   <Plus size={14} className="text-emerald-500" />
                 </button>
               ))}
-              
-              {/* Opción de Crear Nueva Cuenta */}
-              <button 
-                onClick={createAndAddAccount}
-                className="w-full px-6 py-4 flex items-center gap-3 hover:bg-blue-600/10 transition-colors text-left border-t border-app-border mt-2 bg-blue-600/5 group"
-              >
-                <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-600/20 group-hover:scale-110 transition-transform">
-                  <PlusCircle size={18} />
-                </div>
-                <div>
-                  <p className="text-[10px] font-black text-blue-600 uppercase">¿No encuentras la cuenta?</p>
-                  <p className="text-[9px] font-bold text-app-muted uppercase">Click aquí para crear e insertar "{searchTerm || 'nueva cuenta'}"</p>
-                </div>
-              </button>
             </div>
           </div>
         </div>
