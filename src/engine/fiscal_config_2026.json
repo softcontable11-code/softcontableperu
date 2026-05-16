@@ -1,0 +1,79 @@
+{
+  "fiscal_year_config": {
+    "year": 2026,
+    "global_parameters": {
+      "uit_official_value": 5500,
+      "igv_base_rate": 0.14,
+      "ipm_base_rate": 0.04,
+      "total_tax_rate_igv": 0.18,
+      "corporate_income_tax_rates": {
+        "rmt_tier_1_max_uit": 15,
+        "rmt_tier_1_rate": 0.10,
+        "rmt_tier_2_rate": 0.295,
+        "rg_flat_rate": 0.295
+      }
+    }
+  },
+  "regime_decision_tree": {
+    "NRUS": {
+      "eligibility_conditions": {
+        "max_annual_revenue": 96000,
+        "max_monthly_revenue": 8000,
+        "max_annual_purchases": 96000,
+        "max_monthly_purchases": 8000,
+        "allowed_invoice_types": ["03", "12"],
+        "disallowed_ciiu_codes": ["4923", "6920", "6810", "7911"] 
+      },
+      "system_outputs": {
+        "monthly_quota_logic": "if monthly_revenue <= 5000 then 20 else if monthly_revenue <= 8000 then 50 else raise_regime_change_alert()",
+        "active_modules": ["sales_tracking", "purchase_tracking"],
+        "electronic_books_required": []
+      }
+    },
+    "RER": {
+      "eligibility_conditions": {
+        "max_annual_revenue": 525000,
+        "max_annual_purchases": 525000,
+        "max_fixed_assets_value": 126000,
+        "max_employees_per_shift": 10,
+        "disallowed_ciiu_codes": ["4100", "7110", "6910", "8620"]
+      },
+      "system_outputs": {
+        "income_tax_monthly_rate": 0.015,
+        "active_modules": ["sales_tracking", "purchase_tracking", "fixed_assets_basic", "payroll_basic"],
+        "electronic_books_required": ["RVIE", "RCE"]
+      }
+    },
+    "RMT": {
+      "eligibility_conditions": {
+        "max_annual_revenue_uit": 1700,
+        "corporate_linkage_revenue_limit_uit": 1700
+      },
+      "system_outputs": {
+        "income_tax_monthly_rate": "if accumulated_revenue_uit <= 300 then 0.01 else apply_dynamic_coefficient(previous_year_tax, previous_year_revenue)",
+        "income_tax_annual_rate": "if net_income_uit <= 15 then 0.10 else 0.295",
+        "dynamic_books_matrix": {
+          "under_300_uit": ["RVIE", "RCE", "Diario_Simplificado"],
+          "under_500_uit": ["RVIE", "RCE", "Diario", "Mayor"],
+          "under_1700_uit": ["RVIE", "RCE", "Diario", "Mayor", "Inventarios_Balances"]
+        }
+      }
+    },
+    "RG": {
+      "eligibility_conditions": {
+        "min_annual_revenue_uit": 0,
+        "max_annual_revenue_uit": null
+      },
+      "system_outputs": {
+        "income_tax_monthly_rate": "max(0.015, apply_dynamic_coefficient(previous_year_tax, previous_year_revenue))",
+        "income_tax_annual_rate": 0.295,
+        "dynamic_books_matrix": {
+          "under_300_uit": ["RVIE", "RCE", "Diario_Simplificado"],
+          "under_500_uit": ["RVIE", "RCE", "Diario", "Mayor"],
+          "under_1700_uit": ["RVIE", "RCE", "Diario", "Mayor", "Inventarios_Balances"],
+          "above_1700_uit": ["Contabilidad_Completa_Integral"]
+        }
+      }
+    }
+  }
+}

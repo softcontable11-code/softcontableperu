@@ -1,0 +1,20 @@
+{
+  "sire_ingestion_pipeline": {
+    "module_target": "RVIE_ANEXO_3",
+    "encoding": "UTF-8",
+    "delimiter_char": "|",
+    "batch_processing_size": 10000,
+    "key_identification_fields": [
+      {"position_index": 1, "system_field_name": "ruc_emisor_generador", "data_type": "string", "fixed_length": 11, "is_nullable": false},
+      {"position_index": 4, "system_field_name": "codigo_car_trazabilidad", "data_type": "string", "fixed_length": 27, "is_nullable": false},
+      {"position_index": 7, "system_field_name": "codigo_tipo_comprobante", "data_type": "string", "max_length": 2, "validation_catalog": "Catálogo 01"},
+      {"position_index": 8, "system_field_name": "numero_serie_alfanumerico", "data_type": "string", "max_length": 4, "is_nullable": false},
+      {"position_index": 9, "system_field_name": "numero_correlativo_documento", "data_type": "string", "max_length": 20, "is_nullable": false}
+    ],
+    "monetary_evaluation_fields": [
+      {"position_index": 14, "system_field_name": "monto_base_imponible_gravada", "data_type": "decimal_12_2", "default": 0.00},
+      {"position_index": 16, "system_field_name": "monto_igv_ipm_aplicado", "data_type": "decimal_12_2", "default": 0.00},
+      {"position_index": 24, "system_field_name": "monto_importe_total", "data_type": "decimal_12_2", "default": 0.00}
+    ]
+  }
+}

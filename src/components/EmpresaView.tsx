@@ -1,0 +1,479 @@
+import React, { useState, useMemo } from 'react';
+import {
+  TrendingUp, ShoppingBag, Activity,
+  Building2, Hash, MapPin, MapPinHouse, MessageCircleMore,
+  Loader2, CheckCircle2, CalendarDays, Upload, Trash2,
+  Shield, Settings, BookText, Tag, ShoppingCart, ReceiptText,
+  ArrowRight, Clock, FileText, Users, ChevronRight, Wallet, Scale
+} from 'lucide-react';
+import { useStore, type RegimenCode } from '../store';
+import { REGIMENES_TRIBUTARIOS } from '../constants/tributario';
+import * as apiService from '../services/apiService';
+
+// ─── Helpers ───
+const formatCurrency = (n: number) => `S/ ${Math.abs(n).toLocaleString('es-PE', { minimumFractionDigits: 2 })}`;
+
+const EmpresaView: React.FC = () => {
+  const { currentCompany: _currentCompany, updateCompany, sales, purchases, honorarios, journal, asientos, entities, setActiveTab } = useStore();
+  const currentCompany = _currentCompany || {};
+  const [isSearchingRuc, setIsSearchingRuc] = useState(false);
+  const [fetchSuccess, setFetchSuccess] = useState(false);
+  const [showConfig, setShowConfig] = useState(false);
+  const [supportLinkDraft, setSupportLinkDraft] = useState('');
+  const [isSupportSaved, setIsSupportSaved] = useState(!!currentCompany.support);
+
+  // ─── Computed Metrics (Excluyendo Propuestas SIRE) ───
+  const localSales = useMemo(() => sales.filter(s => s.estado_sire !== 'Propuesta'), [sales]);
+  const localPurchases = useMemo(() => purchases.filter(p => p.estado_sire !== 'Propuesta'), [purchases]);
+
+  const totalSales = useMemo(() => localSales.reduce((acc, s) => acc + s.total, 0), [localSales]);
+  const totalPurchases = useMemo(() => localPurchases.reduce((acc, p) => acc + p.total, 0), [localPurchases]);
+  const igvSales = useMemo(() => localSales.reduce((acc, s) => acc + s.igv, 0), [localSales]);
+  const igvPurchases = useMemo(() => localPurchases.reduce((acc, p) => acc + p.igv, 0), [localPurchases]);
+  const estimatedIgv = igvSales - igvPurchases;
+
+
+  // Recent activity (last 8 operations)
+  const recentOps = useMemo(() => {
+    const ops: { type: string; label: string; amount: number; date: string; icon: typeof Tag }[] = [];
+    localSales.slice(-4).forEach(s => ops.push({ type: 'venta', label: `${s.serie}-${s.numero}`, amount: s.total, date: s.fecha, icon: Tag }));
+    localPurchases.slice(-4).forEach(p => ops.push({ type: 'compra', label: `${p.serie}-${p.numero}`, amount: p.total, date: p.fecha, icon: ShoppingCart }));
+    honorarios.slice(-2).forEach(h => ops.push({ type: 'honorario', label: `${h.serie}-${h.numero}`, amount: h.total, date: h.fecha, icon: ReceiptText }));
+    return ops.sort((a, b) => (b.date || '').localeCompare(a.date || '')).slice(0, 6);
+  }, [localSales, localPurchases, honorarios]);
+
+  const handleRucChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, '').slice(0, 11);
+    updateCompany({ ruc: value });
+    setFetchSuccess(false);
+    if (value.length === 11) {
+      setIsSearchingRuc(true);
+      try {
+        const data = await apiService.consultarRUC(value);
+        if (data && data.razonSocial) {
+          const loc = [data.departamento, data.provincia, data.distrito].filter(Boolean).join(' - ');
+          updateCompany({ name: data.razonSocial, address: data.direccion || currentCompany.address, location: loc || currentCompany.location });
+          setFetchSuccess(true);
+          setTimeout(() => setFetchSuccess(false), 3000);
+        }
+      } catch { /* silent */ } finally { setIsSearchingRuc(false); }
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-6 p-6 md:p-8 overflow-y-auto animate-fade-in custom-scrollbar pb-24 h-full">
+
+      {/* ═══ HEADER ═══ */}
+      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-black tracking-tight flex items-center gap-3">
+            <img src="assets/logo.png" alt="Logo" className="w-9 h-9 object-contain" />
+            <span className="text-gradient">Panel de Control</span>
+          </h1>
+          <p className="text-sm text-app-muted mt-1 font-medium">
+            {currentCompany.name || 'Empresa'} — Periodo {currentCompany.period || new Date().getFullYear()}
+          </p>
+        </div>
+
+        {/* Quick action pills */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {[
+            { label: 'Compra', icon: ShoppingCart, tab: 'COMPRAS', color: 'text-violet-500 bg-violet-500/10 hover:bg-violet-500/20' },
+            { label: 'Venta', icon: Tag, tab: 'VENTAS', color: 'text-pld-blue bg-pld-blue/10 hover:bg-pld-blue/20' },
+            { label: 'Asiento', icon: BookText, tab: 'ASIENTOS', color: 'text-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/20' },
+          ].map(q => (
+            <button
+              key={q.tab}
+              onClick={() => setActiveTab(q.tab)}
+              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all ${q.color}`}
+            >
+              <q.icon size={14} />
+              + {q.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ═══ KPI CARDS ═══ */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
+        {/* Ventas */}
+        <div className="card-elevated group cursor-pointer" onClick={() => setActiveTab('VENTAS')}>
+          <div className="flex justify-between items-start mb-3">
+            <div className="p-2.5 bg-emerald-500/10 rounded-xl text-emerald-500"><TrendingUp size={20} /></div>
+            <span className="text-[10px] font-bold tracking-widest text-app-muted uppercase">Ventas</span>
+          </div>
+          <h3 className="text-2xl font-black tracking-tighter">{formatCurrency(totalSales)}</h3>
+          <div className="flex items-center gap-2 mt-2">
+            <span className="text-[10px] font-bold bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded-full">{localSales.length} registros</span>
+            <span className="text-[10px] text-app-muted group-hover:text-emerald-500 transition-colors ml-auto flex items-center gap-1">
+              Ver <ChevronRight size={10} />
+            </span>
+          </div>
+        </div>
+
+        {/* Compras */}
+        <div className="card-elevated group cursor-pointer" onClick={() => setActiveTab('COMPRAS')}>
+          <div className="flex justify-between items-start mb-3">
+            <div className="p-2.5 bg-violet-500/10 rounded-xl text-violet-500"><ShoppingBag size={20} /></div>
+            <span className="text-[10px] font-bold tracking-widest text-app-muted uppercase">Compras</span>
+          </div>
+          <h3 className="text-2xl font-black tracking-tighter">{formatCurrency(totalPurchases)}</h3>
+          <div className="flex items-center gap-2 mt-2">
+            <span className="text-[10px] font-bold bg-violet-500/10 text-violet-500 px-2 py-0.5 rounded-full">{localPurchases.length} registros</span>
+            <span className="text-[10px] text-app-muted group-hover:text-violet-500 transition-colors ml-auto flex items-center gap-1">
+              Ver <ChevronRight size={10} />
+            </span>
+          </div>
+        </div>
+
+        {/* IGV Estimado */}
+        <div className="card-elevated">
+          <div className="flex justify-between items-start mb-3">
+            <div className="p-2.5 bg-orange-500/10 rounded-xl text-orange-500"><Wallet size={20} /></div>
+            <span className="text-[10px] font-bold tracking-widest text-app-muted uppercase">IGV Estimado</span>
+          </div>
+          <h3 className="text-2xl font-black tracking-tighter">{formatCurrency(estimatedIgv)}</h3>
+          <div className="flex items-center gap-2 mt-2">
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${estimatedIgv > 0 ? 'bg-rose-500/10 text-rose-500' : 'bg-emerald-500/10 text-emerald-500'}`}>
+              {estimatedIgv > 0 ? 'Por Pagar' : 'Saldo a Favor'}
+            </span>
+          </div>
+        </div>
+
+        {/* Resumen Contable */}
+        <div className="card-elevated">
+          <div className="flex justify-between items-start mb-3">
+            <div className="p-2.5 bg-pld-blue/10 rounded-xl text-pld-blue"><Activity size={20} /></div>
+            <span className="text-[10px] font-bold tracking-widest text-app-muted uppercase">Resumen</span>
+          </div>
+          <div className="space-y-1.5">
+            <div className="flex justify-between text-[11px]">
+              <span className="text-app-muted">Asientos</span>
+              <span className="font-bold font-mono">{asientos.length}</span>
+            </div>
+            <div className="flex justify-between text-[11px]">
+              <span className="text-app-muted">Honorarios</span>
+              <span className="font-bold font-mono">{honorarios.length}</span>
+            </div>
+            <div className="flex justify-between text-[11px]">
+              <span className="text-app-muted">Mov. Diario</span>
+              <span className="font-bold font-mono">{journal.length}</span>
+            </div>
+            <div className="flex justify-between text-[11px]">
+              <span className="text-app-muted">Directorio</span>
+              <span className="font-bold font-mono">{entities.length}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ═══ MIDDLE ROW: Activity + Quick Links ═══ */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        {/* Recent Activity */}
+        <div className="lg:col-span-2 card-elevated !p-0 overflow-hidden">
+          <div className="px-5 py-3 border-b border-app-border flex items-center justify-between">
+            <h3 className="text-[11px] font-black uppercase tracking-widest text-app-text flex items-center gap-2">
+              <Clock size={14} className="text-pld-blue" />
+              Últimas Operaciones
+            </h3>
+            <span className="text-[10px] text-app-muted">{localSales.length + localPurchases.length + honorarios.length} total</span>
+          </div>
+          {recentOps.length > 0 ? (
+            <div className="divide-y divide-app-border/50">
+              {recentOps.map((op, i) => (
+                <div key={i} className="flex items-center gap-4 px-5 py-3 hover:bg-app-hover transition-colors">
+                  <div className={`p-2 rounded-lg shrink-0 ${
+                    op.type === 'venta' ? 'bg-emerald-500/10 text-emerald-500' :
+                    op.type === 'compra' ? 'bg-violet-500/10 text-violet-500' :
+                    'bg-amber-500/10 text-amber-500'
+                  }`}>
+                    <op.icon size={14} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-app-text uppercase truncate">{op.type}: {op.label}</p>
+                    <p className="text-[10px] text-app-muted font-mono">{op.date || '—'}</p>
+                  </div>
+                  <span className="text-sm font-mono font-bold text-app-text shrink-0">{formatCurrency(op.amount)}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-12 text-app-muted">
+              <FileText size={32} strokeWidth={1.5} className="mb-2 opacity-30" />
+              <p className="text-xs font-bold uppercase tracking-widest">Sin operaciones aún</p>
+              <p className="text-[10px] mt-1 opacity-70">Registra compras o ventas para ver la actividad</p>
+            </div>
+          )}
+        </div>
+
+        {/* Quick Access Panel */}
+        <div className="card-elevated !p-0 overflow-hidden">
+          <div className="px-5 py-3 border-b border-app-border">
+            <h3 className="text-[11px] font-black uppercase tracking-widest text-app-text flex items-center gap-2">
+              <ArrowRight size={14} className="text-pld-blue" />
+              Acceso Rápido
+            </h3>
+          </div>
+          <div className="p-3 space-y-1.5">
+            {[
+              { label: 'Registro de Compras', icon: ShoppingCart, tab: 'COMPRAS', desc: 'Ingresar nueva compra' },
+              { label: 'Registro de Ventas', icon: Tag, tab: 'VENTAS', desc: 'Ingresar nueva venta' },
+              { label: 'Asientos Contables', icon: BookText, tab: 'ASIENTOS', desc: 'Crear asiento manual' },
+              { label: 'Balance de Comprobación', icon: Scale, tab: 'HHTT', desc: 'Balance de comprobación' },
+              { label: 'Mis Empresas', icon: Building2, tab: 'CLIENTES', desc: 'Cambiar empresa activa' },
+              { label: 'Directorio', icon: Users, tab: 'CLI_PRO', desc: 'Clientes y proveedores' },
+            ].map(item => (
+              <button
+                key={item.tab}
+                onClick={() => setActiveTab(item.tab)}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-app-hover transition-all group"
+              >
+                <div className="p-2 bg-app-bg rounded-lg text-app-muted group-hover:text-pld-blue transition-colors shrink-0">
+                  <item.icon size={16} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11px] font-bold text-app-text group-hover:text-pld-blue transition-colors">{item.label}</p>
+                  <p className="text-[9px] text-app-muted truncate">{item.desc}</p>
+                </div>
+                <ChevronRight size={14} className="text-app-border group-hover:text-pld-blue transition-colors shrink-0" />
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ═══ COMPANY CONFIGURATION (Collapsible) ═══ */}
+      <div>
+        <button
+          onClick={() => setShowConfig(!showConfig)}
+          className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-app-muted hover:text-pld-blue transition-colors mb-3"
+        >
+          <Settings size={14} />
+          Parámetros de la Entidad
+          <ChevronRight size={12} className={`transition-transform duration-200 ${showConfig ? 'rotate-90' : ''}`} />
+        </button>
+
+        {showConfig && (
+          <div className="card-elevated animate-slide-up">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+              {/* Form (Left 8 cols) */}
+              <div className="lg:col-span-8 space-y-6">
+
+                {/* Row 1: RUC & Name */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="flex flex-col space-y-2 relative">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-app-muted flex items-center gap-2">
+                      <Hash size={12} className="text-pld-blue" /> RUC
+                    </label>
+                    <div className="relative">
+                      <input type="text" value={currentCompany.ruc} onChange={handleRucChange}
+                        placeholder="Ingrese RUC..." maxLength={11}
+                        className="w-full text-sm font-mono tracking-wider pr-10" />
+                      {isSearchingRuc && <Loader2 size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-pld-blue animate-spin" />}
+                      {fetchSuccess && !isSearchingRuc && <CheckCircle2 size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500" />}
+                    </div>
+                  </div>
+                  <div className="flex flex-col space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-app-muted flex items-center gap-2">
+                      <Building2 size={12} className="text-pld-blue" /> Razón Social
+                    </label>
+                    <input type="text" value={currentCompany.name}
+                      onChange={(e) => updateCompany({ name: e.target.value })}
+                      className="w-full text-sm font-bold" />
+                  </div>
+                </div>
+
+                {/* Row 2: Address */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="flex flex-col space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-app-muted flex items-center gap-2">
+                      <MapPinHouse size={12} className="text-pld-blue" /> Domicilio Fiscal
+                    </label>
+                    <input type="text" value={currentCompany.address}
+                      onChange={(e) => updateCompany({ address: e.target.value })}
+                      className="w-full text-sm" />
+                  </div>
+                  <div className="flex flex-col space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-app-muted flex items-center gap-2">
+                      <MapPin size={12} className="text-pld-blue" /> Ubigeo / Lugar
+                    </label>
+                    <input type="text" value={currentCompany.location}
+                      onChange={(e) => updateCompany({ location: e.target.value })}
+                      className="w-full text-sm" />
+                  </div>
+                </div>
+
+                {/* Row 3: Period, Regimen & Business Type */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="flex flex-col space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-app-muted flex items-center gap-2">
+                      <CalendarDays size={12} className="text-pld-blue" /> Periodo Contable
+                    </label>
+                    <select value={currentCompany.period || '2025'}
+                      onChange={(e) => updateCompany({ period: e.target.value })}
+                      className="w-full text-sm font-bold">
+                      {Array.from({ length: 16 }, (_, i) => 2020 + i).map(year => (
+                        <option key={year} value={year}>{year}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex flex-col space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-app-muted flex items-center gap-2">
+                      <Shield size={12} className="text-pld-blue" /> Régimen Tributario
+                    </label>
+                    <select value={currentCompany.regimenTributario || 'RG'}
+                      onChange={(e) => updateCompany({ regimenTributario: e.target.value as RegimenCode })}
+                      className="w-full text-sm font-bold">
+                      {REGIMENES_TRIBUTARIOS.map(r => (
+                        <option key={r.code} value={r.code}>{r.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex flex-col space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-app-muted flex items-center gap-2">
+                      <Activity size={12} className="text-pld-blue" /> Rubro / Sector
+                    </label>
+                    <select value={currentCompany.businessType || 'COMERCIAL'}
+                      onChange={(e) => updateCompany({ businessType: e.target.value as any })}
+                      className="w-full text-sm font-bold">
+                      <option value="COMERCIAL">COMERCIAL</option>
+                      <option value="MANUFACTURERA">MANUFACTURERA</option>
+                      <option value="SERVICIOS">SERVICIOS</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Regimen Info */}
+                {(() => {
+                  const regimen = REGIMENES_TRIBUTARIOS.find(r => r.code === (currentCompany.regimenTributario || 'RG'));
+                  if (!regimen) return null;
+                  return (
+                    <div className="bg-pld-blue/5 border border-pld-blue/15 rounded-xl p-4">
+                      <p className="text-xs text-app-text leading-relaxed font-medium mb-3">{regimen.description}</p>
+                      <div className="flex flex-wrap gap-2">
+                        <span className="text-[10px] tracking-wider uppercase bg-pld-blue/10 text-pld-blue px-3 py-1 rounded-full font-bold">
+                          IR: {regimen.rentaMensual}
+                        </span>
+                        <span className="text-[10px] tracking-wider uppercase bg-app-hover text-app-muted px-3 py-1 rounded-full font-bold border border-app-border">
+                          Límite: {regimen.limiteIngresos}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                <div className="h-px w-full bg-app-border" />
+
+                {/* SOL Credentials */}
+                <div className="space-y-4">
+                  <h3 className="text-xs font-bold text-pld-blue uppercase tracking-widest flex items-center gap-2">
+                    Integración API (SUNAT SOL)
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-app-bg/50 p-4 rounded-xl border border-app-border">
+                    <div className="flex flex-col space-y-1.5">
+                      <label className="text-[10px] uppercase font-bold text-app-muted tracking-widest">Usuario SOL</label>
+                      <input type="text" value={currentCompany.sol_user || ''}
+                        onChange={(e) => updateCompany({ sol_user: e.target.value })} placeholder="Ej: JSANTOS1" />
+                    </div>
+                    <div className="flex flex-col space-y-1.5">
+                      <label className="text-[10px] uppercase font-bold text-app-muted tracking-widest">Clave SOL</label>
+                      <input type="password" value={currentCompany.sol_pass || ''}
+                        onChange={(e) => updateCompany({ sol_pass: e.target.value })} placeholder="••••••••••••" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-app-bg/50 p-4 rounded-xl border border-app-border">
+                    <div className="flex flex-col space-y-1.5">
+                      <label className="text-[10px] uppercase font-bold text-app-muted tracking-widest">Client ID (SIRE)</label>
+                      <input type="text" value={currentCompany.sunatClientId || ''}
+                        onChange={(e) => updateCompany({ sunatClientId: e.target.value })} placeholder="Ingrese Client ID..." />
+                    </div>
+                    <div className="flex flex-col space-y-1.5">
+                      <label className="text-[10px] uppercase font-bold text-app-muted tracking-widest">Client Secret (SIRE)</label>
+                      <input type="password" value={currentCompany.sunatClientSecret || ''}
+                        onChange={(e) => updateCompany({ sunatClientSecret: e.target.value })} placeholder="••••••••••••" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column (4 cols) */}
+              <div className="lg:col-span-4 flex flex-col gap-5">
+                {/* Logo Upload */}
+                <div
+                  className="flex flex-col items-center justify-center p-6 bg-app-bg rounded-2xl border border-dashed border-app-border hover:border-pld-blue/40 transition-colors relative group cursor-pointer overflow-hidden min-h-[200px]"
+                  onClick={() => document.getElementById('logo-upload')?.click()}
+                >
+                  <input id="logo-upload" type="file" accept="image/png, image/jpeg" className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (ev) => updateCompany({ logoBase64: ev.target?.result as string });
+                        reader.readAsDataURL(file);
+                      }
+                    }} />
+                  {currentCompany.logoBase64 ? (
+                    <div className="relative w-full h-full flex flex-col items-center justify-center p-2">
+                      <img src={currentCompany.logoBase64} alt="Logo" className="max-w-full max-h-[140px] object-contain" />
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-xl">
+                        <span className="text-white font-bold text-xs uppercase tracking-widest flex items-center gap-2"><Upload size={14}/> Cambiar</span>
+                      </div>
+                      <button onClick={(e) => { e.stopPropagation(); updateCompany({ logoBase64: undefined }); }}
+                        className="absolute top-2 right-2 p-1.5 bg-rose-500 text-white rounded-full hover:bg-rose-600 shadow-lg z-10">
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-2 text-app-muted group-hover:text-pld-blue transition-colors">
+                      <Building2 size={40} strokeWidth={1} />
+                      <p className="text-xs font-bold uppercase tracking-widest">Subir Logotipo</p>
+                      <p className="text-[10px] opacity-60">PNG o JPG</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Support Link */}
+                <div className="bg-gradient-to-br from-pld-blue to-pld-magenta rounded-2xl p-5 text-white shadow-lg relative overflow-hidden">
+                  <div className="relative z-10 flex flex-col gap-2.5">
+                    <div className="flex items-center gap-2">
+                      <MessageCircleMore size={18} />
+                      <h3 className="font-bold tracking-widest text-[10px] uppercase">Soporte</h3>
+                    </div>
+                    <p className="text-[10px] opacity-80 leading-tight">Enlace rápido de soporte técnico.</p>
+                    {isSupportSaved && currentCompany.support ? (
+                      <div className="flex items-center gap-2 mt-1">
+                        <a href={currentCompany.support} target="_blank" rel="noopener noreferrer"
+                          className="flex-1 text-center py-2 bg-white text-pld-blue text-[10px] font-black uppercase tracking-wider rounded-lg hover:bg-white/90 transition-colors">
+                          Abrir Portal
+                        </a>
+                        <button onClick={() => { setSupportLinkDraft(currentCompany.support || ''); setIsSupportSaved(false); }}
+                          className="p-2 bg-white/15 hover:bg-white/25 rounded-lg transition-colors"><Settings size={12} /></button>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-2 mt-1">
+                        <input type="text" className="text-xs p-2 rounded-lg bg-black/20 border-white/10 text-white placeholder-white/40"
+                          placeholder="URL del portal..." value={!isSupportSaved ? supportLinkDraft : (currentCompany.support || '')}
+                          onChange={(e) => { setSupportLinkDraft(e.target.value); setIsSupportSaved(false); }} />
+                        <button disabled={!supportLinkDraft.trim()}
+                          onClick={() => { if (supportLinkDraft.trim()) { updateCompany({ support: supportLinkDraft.trim() }); setIsSupportSaved(true); } }}
+                          className="py-2 bg-white text-pld-magenta text-[10px] font-black uppercase tracking-widest rounded-lg disabled:opacity-40">
+                          Guardar
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  <div className="absolute -bottom-8 -right-8 w-28 h-28 bg-white/10 blur-2xl rounded-full" />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default EmpresaView;

@@ -1,0 +1,349 @@
+import React, { useState, useMemo } from 'react';
+import { 
+  BookOpen, 
+  Printer, 
+  Search, 
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  Download
+} from 'lucide-react';
+import { useStore } from '../store';
+import { exportTableToXLSX } from '../utils/export';
+
+/**
+ * FORMATO 14.1: REGISTRO DE VENTAS E INGRESOS
+ * ══════════════════════════════════════════════
+ * Estructura oficial SUNAT para el Libro de Ventas.
+ * 
+ * Columnas según Resolución de Superintendencia N° 234-2006/SUNAT:
+ * 
+ * GRUPO 1 — Datos del Registro:
+ *   1. N° Correlativo
+ *   2. Fecha de Emisión
+ *   3. Fecha de Vcto./Pago
+ *
+ * GRUPO 2 — Comprobante de Pago:
+ *   4. Tipo (Tabla 10)
+ *   5. Serie
+ *   6. Número
+ *
+ * GRUPO 3 — Información del Cliente:
+ *   7. Doc. Identidad Tipo (Tabla 2)
+ *   8. Doc. Identidad Número
+ *   9. Apellidos y Nombres / Razón Social
+ *
+ * GRUPO 4 — Valor Venta (Exportación):
+ *  10. Valor Facturado Exportación
+ *
+ * GRUPO 5 — Base Imponible Operación Gravada:
+ *  11. Cuenta Contable (Ingresos: 70xx)
+ *  12. Base Imponible
+ *
+ * GRUPO 6 — Importe Total de la Operación:
+ *  13. Exonerada
+ *  14. Inafecta
+ *
+ * GRUPO 7 — Tributos:
+ *  15. ISC
+ *  16. IGV y/o IPM
+ *  17. ICBPER
+ *  18. Otros Tributos y Cargos
+ *
+ * GRUPO 8 — Importe Total:
+ *  19. Cuenta Contable (Cargo: 12xx)
+ *  20. Importe Total del Comprobante
+ *
+ * GRUPO 9 — Tipo de Cambio
+ *
+ * GRUPO 10 — Referencia Comprobante Original:
+ *  21. Fecha
+ *  22. Tipo
+ *  23. Serie
+ *  24. Número
+ */
+
+const MONTHS = [
+  'ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO',
+  'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'
+];
+
+const fmt = (n: number) => n !== 0
+  ? n.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  : '';
+
+const fmtAlways = (n: number) =>
+  n.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+const RegistroVentasView: React.FC = () => {
+  const { sales, currentCompany } = useStore();
+  const [periodoMes, setPeriodoMes] = useState(new Date().getMonth());
+  const [periodoAnio, setPeriodoAnio] = useState(parseInt(currentCompany.period) || new Date().getFullYear());
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // ─── Filtrado por Periodo ───
+  const filteredSales = useMemo(() => {
+    return sales.filter(s => {
+      const d = new Date(s.fecha);
+      const matchMonth = d.getMonth() === periodoMes;
+      const matchYear = d.getFullYear() === periodoAnio;
+      const matchSearch = searchTerm === '' ||
+        s.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        s.doc_num.includes(searchTerm) ||
+        s.numero.includes(searchTerm) ||
+        s.serie.includes(searchTerm);
+      return matchMonth && matchYear && matchSearch;
+    }).sort((a, b) => {
+      // Ordenar por fecha, luego por registro
+      const dateCompare = a.fecha.localeCompare(b.fecha);
+      return dateCompare !== 0 ? dateCompare : a.registro.localeCompare(b.registro);
+    });
+  }, [sales, periodoMes, periodoAnio, searchTerm]);
+
+  // ─── Totales ───
+  const totals = useMemo(() => {
+    return filteredSales.reduce((acc, s) => ({
+      exportacion: acc.exportacion + (s.tipOperCode === '02' ? s.bi : 0),
+      bi: acc.bi + s.bi,
+      exonerada: acc.exonerada + (s.noGravada || 0),
+      inafecta: 0,
+      isc: acc.isc + (s.isc || 0),
+      igv: acc.igv + s.igv,
+      icbper: acc.icbper + (s.icbper || 0),
+      otros: acc.otros + (s.otros_tributos || 0),
+      total: acc.total + s.total,
+    }), {
+      exportacion: 0, bi: 0, exonerada: 0, inafecta: 0,
+      isc: 0, igv: 0, icbper: 0, otros: 0, total: 0,
+    });
+  }, [filteredSales]);
+
+  return (
+    <div className="flex flex-col h-full bg-app-bg text-app-text animate-slide-up relative print:bg-white print:p-0">
+
+      {/* ═══ HEADER / CONTROL BAR (Toolbar Estándar) ═══ */}
+      <div className="h-12 px-5 bg-app-surface border-b border-app-border flex items-center justify-between shrink-0 toolbar print:hidden">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-pld-magenta/10 rounded-lg">
+            <BookOpen size={16} className="text-pld-magenta" />
+          </div>
+          <div>
+            <h2 className="text-xs font-black uppercase tracking-widest text-app-text">Registro de Ventas e Ingresos</h2>
+            <div className="flex gap-3 text-[9px] items-center text-app-muted">
+               <span>FORMATO: 14.1</span>
+               <span>{MONTHS[periodoMes]} {periodoAnio}</span>
+               <span>RUC: {currentCompany.ruc}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          {/* Mes Selector */}
+          <div className="bg-app-bg border border-app-border rounded-lg flex items-center h-8 px-1">
+             <button onClick={() => setPeriodoMes(prev => prev === 0 ? 11 : prev - 1)} className="p-1 hover:text-pld-magenta transition-colors"><ChevronLeft size={14} /></button>
+             <select
+               value={periodoMes}
+               onChange={e => setPeriodoMes(parseInt(e.target.value))}
+               className="bg-transparent border-none text-[9px] font-black uppercase text-app-text focus:ring-0 cursor-pointer py-0 w-20 appearance-none text-center"
+             >
+               {MONTHS.map((m, i) => <option key={m} value={i} className="bg-app-surface">{m}</option>)}
+             </select>
+             <button onClick={() => setPeriodoMes(prev => prev === 11 ? 0 : prev + 1)} className="p-1 hover:text-pld-magenta transition-colors"><ChevronRight size={14} /></button>
+          </div>
+
+          <div className="h-4 w-px bg-app-border mx-1" />
+
+          {/* Buscador Propio */}
+          <div className="relative group">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 text-app-muted group-focus-within:text-pld-magenta transition-colors" size={12} />
+            <input
+              type="text"
+              placeholder="Buscar..."
+              className="bg-app-bg border border-app-border rounded-lg pl-7 pr-3 h-8 text-[10px] w-40 focus:ring-1 focus:ring-pld-magenta outline-none transition-all font-bold"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+            />
+          </div>
+
+          <div className="h-4 w-px bg-app-border mx-1" />
+
+          <button
+            onClick={() => exportTableToXLSX('registro-ventas-table', `Registro_Ventas_${periodoAnio}_${String(periodoMes + 1).padStart(2, '0')}`)}
+            className="h-8 px-3 bg-app-bg border border-app-border rounded-lg hover:text-pld-magenta transition-colors flex items-center gap-1.5 text-[10px] font-bold text-app-muted"
+          >
+            <Download size={14} /> Excel
+          </button>
+          <button
+            onClick={() => window.print()}
+            className="h-8 px-3 bg-app-bg border border-app-border rounded-lg hover:text-pld-magenta transition-colors flex items-center gap-1.5 text-[10px] font-bold text-app-muted"
+          >
+            <Printer size={14} /> Imprimir
+          </button>
+        </div>
+      </div>
+
+      {/* ═══ MAIN TABLE ═══ */}
+      <div className="flex-1 overflow-auto p-4 custom-scrollbar">
+        <div className="inline-block min-w-full border border-app-border shadow-2xl rounded-sm overflow-hidden bg-app-surface">
+          <table id="registro-ventas-table" className="min-w-full border-collapse text-[9px] border border-app-border bg-app-surface shadow-xl">
+
+            {/* ──── THEAD: 3-row grouped headers ──── */}
+            <thead className="sticky top-0 z-20">
+              {/* ROW 1: Top-level groups */}
+              <tr className="bg-pld-magenta text-white text-[7.5px] font-black uppercase">
+                <th rowSpan={3} className="px-1.5 py-2 border border-pink-700/50 text-center w-10">N°<br />CORREL</th>
+                <th rowSpan={3} className="px-1.5 py-2 border border-pink-700/50 text-center w-16">FECHA<br />EMISIÓN</th>
+                <th rowSpan={3} className="px-1.5 py-2 border border-pink-700/50 text-center w-16">FECHA<br />VCTO.</th>
+                <th colSpan={3} className="px-1.5 py-2 border border-pink-700/50 text-center">COMPROBANTE DE PAGO<br />O DOCUMENTO</th>
+                <th colSpan={3} className="px-1.5 py-2 border border-pink-700/50 text-center bg-pink-600/50">INFORMACIÓN DEL<br />CLIENTE</th>
+                <th rowSpan={3} className="px-1.5 py-2 border border-pink-700/50 text-center w-20 text-yellow-200">VALOR<br />FACTURADO<br />EXPORTACIÓN</th>
+                <th colSpan={2} className="px-1.5 py-2 border border-pink-700/50 text-center bg-pink-700/30">BASE IMPONIBLE<br />OP. GRAVADA</th>
+                <th colSpan={2} className="px-1.5 py-2 border border-pink-700/50 text-center">IMPORTE TOTAL<br />DE LA OPERACIÓN</th>
+                <th rowSpan={3} className="px-1.5 py-2 border border-pink-700/50 text-center w-14">ISC</th>
+                <th rowSpan={3} className="px-1.5 py-2 border border-pink-700/50 text-center w-16 text-yellow-200">IGV<br />Y/O IPM</th>
+                <th rowSpan={3} className="px-1.5 py-2 border border-pink-700/50 text-center w-14">OTROS<br />TRIBUTOS<br />Y CARGOS</th>
+                <th colSpan={2} className="px-1.5 py-2 border border-pink-700/50 text-center bg-yellow-200/20">IMPORTE<br />TOTAL</th>
+                <th rowSpan={3} className="px-1.5 py-2 border border-pink-700/50 text-center w-12">T.C.</th>
+                <th colSpan={4} className="px-1.5 py-2 border border-pink-700/50 text-center">REFERENCIA DEL COMPROBANTE<br />DE PAGO O DOC. QUE SE MODIFICA</th>
+              </tr>
+
+              {/* ROW 2: Sub-groups */}
+              <tr className="bg-pld-magenta text-white text-[7px] font-black uppercase">
+                {/* Comprobante sub */}
+                <th rowSpan={2} className="px-1 py-1.5 border border-pink-700/50 text-center w-10">TIPO<br /><span className="text-[6px] opacity-70">(TABLA 10)</span></th>
+                <th rowSpan={2} className="px-1 py-1.5 border border-pink-700/50 text-center w-12">SERIE</th>
+                <th rowSpan={2} className="px-1 py-1.5 border border-pink-700/50 text-center w-16">NÚMERO</th>
+                {/* Cliente sub */}
+                <th colSpan={2} className="px-1 py-1.5 border border-pink-700/50 text-center bg-pink-600/50">DOCUMENTO DE IDENTIDAD</th>
+                <th rowSpan={2} className="px-1 py-1.5 border border-pink-700/50 text-center min-w-[130px] bg-pink-600/50">APELLIDOS Y NOMBRES,<br />DENOMINACIÓN<br />O RAZÓN SOCIAL</th>
+                {/* BI Gravada */}
+                <th rowSpan={2} className="px-1 py-1.5 border border-pink-700/50 text-center w-14 text-yellow-200">CUENTA<br />CONTABLE</th>
+                <th rowSpan={2} className="px-1 py-1.5 border border-pink-700/50 text-center w-20">BASE<br />IMPONIBLE</th>
+                {/* Operación */}
+                <th rowSpan={2} className="px-1 py-1.5 border border-pink-700/50 text-center w-16">EXONERADA</th>
+                <th rowSpan={2} className="px-1 py-1.5 border border-pink-700/50 text-center w-16">INAFECTA</th>
+                {/* Importe Total */}
+                <th rowSpan={2} className="px-1 py-1.5 border border-pink-700/50 text-center w-14 text-yellow-200 bg-app-surface/20">CUENTA<br />CONTABLE</th>
+                <th rowSpan={2} className="px-1 py-1.5 border border-pink-700/50 text-center w-20 bg-yellow-400 text-pink-900">IMPORTE<br />TOTAL<br />DEL<br />COMPROBANTE</th>
+                {/* Referencia */}
+                <th rowSpan={2} className="px-1 py-1.5 border border-pink-700/50 text-center w-16">FECHA</th>
+                <th rowSpan={2} className="px-1 py-1.5 border border-pink-700/50 text-center w-10">TIPO</th>
+                <th rowSpan={2} className="px-1 py-1.5 border border-pink-700/50 text-center w-12">SERIE</th>
+                <th rowSpan={2} className="px-1 py-1.5 border border-pink-700/50 text-center w-16">N° DEL<br />COMPROB.</th>
+              </tr>
+
+              {/* ROW 3: Doc identity sub-sub */}
+              <tr className="bg-pld-magenta text-white text-[7px] font-black uppercase">
+                <th className="px-1 py-1 border border-pink-700/50 text-center w-8 bg-pink-600/50">TIPO<br /><span className="text-[6px] opacity-70">(TABLA 2)</span></th>
+                <th className="px-1 py-1 border border-pink-700/50 text-center w-24 bg-pink-600/50">NÚMERO</th>
+              </tr>
+            </thead>
+
+            {/* ──── TBODY: Data rows ──── */}
+            <tbody className="font-mono text-[9px] bg-app-surface">
+              {filteredSales.length === 0 && (
+                <tr>
+                  <td colSpan={24} className="text-center py-16 text-app-muted font-sans italic text-sm">
+                    No se encontraron ventas registradas para {MONTHS[periodoMes]} {periodoAnio}
+                  </td>
+                </tr>
+              )}
+
+              {filteredSales.map((s) => (
+                <tr key={s.id} className="hover:bg-pld-magenta/5 transition-colors border-b border-app-border/50">
+                  {/* N° Correlativo */}
+                  <td className="px-1.5 py-1 border-r border-app-border/40 text-center font-bold text-pld-magenta">{s.registro}</td>
+                  {/* Fecha Emisión */}
+                  <td className="px-1.5 py-1 border-r border-app-border/40 text-center whitespace-nowrap italic">{s.fecha}</td>
+                  {/* Fecha Vcto */}
+                  <td className="px-1.5 py-1 border-r border-app-border/40 text-center whitespace-nowrap text-app-muted italic">{s.fecVcto || ''}</td>
+                  {/* Tipo Doc */}
+                  <td className="px-1.5 py-1 border-r border-app-border/40 text-center font-bold opacity-70">{s.tipo_doc}</td>
+                  {/* Serie */}
+                  <td className="px-1.5 py-1 border-r border-app-border/40 text-center uppercase">{s.serie}</td>
+                  {/* Número */}
+                  <td className="px-1.5 py-1 border-r border-app-border/40 text-center font-black">{s.numero}</td>
+                  {/* Doc Identidad Tipo */}
+                  <td className="px-1.5 py-1 border-r border-app-border/40 text-center">{s.doc_tipo}</td>
+                  {/* Doc Identidad Número */}
+                  <td className="px-1.5 py-1 border-r border-app-border/40 text-center font-bold">{s.doc_num}</td>
+                  {/* Razón Social */}
+                  <td className="px-1.5 py-1 border-r border-app-border/40 text-left uppercase font-sans text-[8px] font-bold truncate max-w-[160px] text-app-text" title={s.nombre}>{s.nombre}</td>
+                  {/* Exportación */}
+                  <td className="px-1.5 py-1 border-r border-app-border/40 text-right">{s.tipOperCode === '02' ? fmt(s.bi) : ''}</td>
+                  {/* Cuenta Contable Ingreso */}
+                  <td className="px-1.5 py-1 border-r border-app-border/40 text-center font-bold text-pld-magenta">{s.ctaIngreso || '70111'}</td>
+                  {/* Base Imponible */}
+                  <td className="px-1.5 py-1 border-r border-app-border/40 text-right font-black text-pld-blue">{fmt(s.bi)}</td>
+                  {/* Exonerada */}
+                  <td className="px-1.5 py-1 border-r border-app-border/40 text-right">{fmt(s.noGravada || 0)}</td>
+                  {/* Inafecta */}
+                  <td className="px-1.5 py-1 border-r border-app-border/40 text-right"></td>
+                  {/* ISC */}
+                  <td className="px-1.5 py-1 border-r border-app-border/40 text-right">{fmt(s.isc || 0)}</td>
+                  {/* IGV */}
+                  <td className="px-1.5 py-1 border-r border-app-border/40 text-right font-bold text-pld-blue">{fmt(s.igv)}</td>
+                  {/* Otros Tributos */}
+                  <td className="px-1.5 py-1 border-r border-app-border/40 text-right">{fmt(s.otros_tributos || 0)}</td>
+                  {/* Cuenta Contable Cargo */}
+                  <td className="px-1.5 py-1 border-r border-app-border/40 text-center font-bold text-pld-magenta">{s.ctaCargo || '1212'}</td>
+                  {/* Importe Total */}
+                  <td className="px-1.5 py-1 border-r border-app-border/40 text-right font-black text-emerald-600 dark:text-emerald-400 bg-emerald-500/5">{fmt(s.total)}</td>
+                  {/* T.C. */}
+                  <td className="px-1.5 py-1 border-r border-app-border/40 text-center text-app-muted">{s.moneda === 'DOLARES' ? s.tc.toFixed(3) : ''}</td>
+                  {/* Referencia: Fecha, Tipo, Serie, N° */}
+                  <td className="px-1.5 py-1 border-r border-app-border/40 text-center"></td>
+                  <td className="px-1.5 py-1 border-r border-app-border/40 text-center"></td>
+                  <td className="px-1.5 py-1 border-r border-app-border/40 text-center"></td>
+                  <td className="px-1.5 py-1 border-r border-app-border/40 text-center"></td>
+                </tr>
+              ))}
+            </tbody>
+
+            {/* ──── TFOOT: Totals ──── */}
+            {filteredSales.length > 0 && (
+              <tfoot className="sticky bottom-0 z-10 bg-app-surface">
+                <tr className="bg-pld-magenta/10 font-black text-[9px] border-t-2 border-pld-magenta">
+                  <td colSpan={9} className="px-3 py-2.5 border-r border-app-border text-right uppercase italic text-[8px] text-pld-magenta tracking-wider">TOTAL GENERAL S/</td>
+                  {/* Exportación */}
+                  <td className="px-1.5 py-2.5 border-r border-app-border text-right">{fmt(totals.exportacion)}</td>
+                  {/* Cuenta (vacío) */}
+                  <td className="px-1.5 py-2.5 border-r border-app-border"></td>
+                  {/* BI Gravada */}
+                  <td className="px-1.5 py-2.5 border-r border-app-border text-right bg-pld-blue text-white font-black">{fmtAlways(totals.bi)}</td>
+                  {/* Exonerada */}
+                  <td className="px-1.5 py-2.5 border-r border-app-border text-right">{fmt(totals.exonerada)}</td>
+                  {/* Inafecta */}
+                  <td className="px-1.5 py-2.5 border-r border-app-border text-right"></td>
+                  {/* ISC */}
+                  <td className="px-1.5 py-2.5 border-r border-app-border text-right">{fmt(totals.isc)}</td>
+                  {/* IGV */}
+                  <td className="px-1.5 py-2.5 border-r border-app-border text-right bg-pld-blue text-white font-black">{fmtAlways(totals.igv)}</td>
+                  {/* Otros */}
+                  <td className="px-1.5 py-2.5 border-r border-app-border text-right">{fmt(totals.otros)}</td>
+                  {/* Cuenta (vacío) */}
+                  <td className="px-1.5 py-2.5 border-r border-app-border"></td>
+                  {/* Importe Total */}
+                  <td className="px-1.5 py-2.5 border-r border-app-border text-right bg-yellow-400 text-pink-900 font-black text-[10px] underline underline-offset-4">{fmtAlways(totals.total)}</td>
+                  {/* T.C. + Referencia (vacío) */}
+                  <td colSpan={5} className="px-1.5 py-2.5"></td>
+                </tr>
+              </tfoot>
+            )}
+          </table>
+        </div>
+      </div>
+
+      {/* ═══ Print Header (only visible when printing) ═══ */}
+      <style>{`
+        @media print {
+          .print\\:hidden { display: none !important; }
+          table { font-size: 7px !important; }
+          th, td { padding: 2px 3px !important; }
+        }
+      `}</style>
+    </div>
+  );
+};
+
+export default RegistroVentasView;

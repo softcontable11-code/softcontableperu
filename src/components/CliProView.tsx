@@ -1,0 +1,213 @@
+import React, { useState } from 'react';
+import { Search, PlusCircle, Users, Edit2, Trash2, Globe, FileText, Loader2 } from 'lucide-react';
+import { DataTable } from './DataTable';
+import { useStore, type Entity } from '../store';
+import Modal from './shared/Modal';
+
+const CliProView: React.FC = () => {
+  const { entities, addEntity, updateEntity, deleteEntity } = useStore();
+  const [query, setQuery] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  // Form State
+  const [tipo, setTipo] = useState('6');
+  const [ruc, setRuc] = useState('');
+  const [descripcion, setDescripcion] = useState('');
+  const [isLoadingRuc, setIsLoadingRuc] = useState(false);
+
+  const filteredData = entities.filter(e =>
+    e.ruc.includes(query) ||
+    e.descripcion.toLowerCase().includes(query.toLowerCase()) ||
+    e.id.includes(query)
+  );
+
+  const handleConsultarRuc = async () => {
+    if (!ruc || ruc.length < 11) return;
+    setIsLoadingRuc(true);
+    try {
+      const token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6ImFhbmdlbG8yNTU1QGdtYWlsLmNvbSJ9.oqXPZP_ielNYSWrNo9p45PUjua1IHKIJ3gBj-tK2irY';
+      const resp = await fetch(`https://dniruc.apisperu.com/api/v1/ruc/${ruc}?token=${token}`);
+      const data = await resp.json();
+      if (data?.razonSocial) setDescripcion(data.razonSocial);
+    } catch (err) { console.error("Error consultando RUC", err); }
+    finally { setIsLoadingRuc(false); }
+  };
+
+  const handleSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!ruc || !descripcion) return;
+    if (editingId) {
+      updateEntity(editingId, { tipo, ruc, descripcion });
+    } else {
+      addEntity({ tipo, ruc, descripcion });
+    }
+    resetForm();
+  };
+
+  const handleEdit = (ent: Entity) => {
+    setEditingId(ent.id);
+    setTipo(ent.tipo);
+    setRuc(ent.ruc);
+    setDescripcion(ent.descripcion);
+    setShowModal(true);
+  };
+
+  const resetForm = () => {
+    setTipo('6'); setRuc(''); setDescripcion('');
+    setEditingId(null); setShowModal(false);
+  };
+
+  const tipoLabels: Record<string, string> = { '6': 'RUC', '1': 'DNI', '4': 'CE', '0': 'OTRO' };
+
+  const columns = [
+    {
+      header: 'TIPO',
+      accessor: (row: Entity) => (
+        <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider ${
+          row.tipo === '6' ? 'bg-pld-blue/10 text-pld-blue' :
+          row.tipo === '1' ? 'bg-emerald-500/10 text-emerald-500' :
+          'bg-app-hover text-app-muted'
+        }`}>
+          {tipoLabels[row.tipo] || row.tipo}
+        </span>
+      ),
+      className: 'w-20 text-center'
+    },
+    {
+      header: 'RUC / DNI',
+      accessor: (row: Entity) => <span className="font-mono text-pld-blue font-bold tracking-wider">{row.ruc}</span>,
+      className: 'w-36'
+    },
+    {
+      header: 'RAZÓN SOCIAL / NOMBRE',
+      accessor: 'descripcion' as keyof Entity,
+      className: 'uppercase text-[11px] font-bold tracking-tight'
+    },
+    {
+      header: '',
+      accessor: (row: Entity) => (
+        <div className="flex gap-1 justify-center">
+          <button onClick={() => handleEdit(row)} className="p-1.5 hover:text-pld-blue hover:bg-pld-blue/10 rounded-lg transition-all"><Edit2 size={13} /></button>
+          <button onClick={() => { if (confirm('¿Eliminar?')) deleteEntity(row.id) }} className="p-1.5 hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-all"><Trash2 size={13} /></button>
+        </div>
+      ),
+      className: 'w-24 text-center'
+    }
+  ];
+
+  return (
+    <div className="h-full flex flex-col bg-app-bg overflow-hidden relative">
+      <div className="flex flex-col h-full overflow-hidden">
+
+        {/* Header */}
+        <div className="h-14 px-5 border-b border-app-border bg-app-surface flex items-center justify-between gap-4 shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-pld-blue/10 rounded-xl"><Users size={16} className="text-pld-blue" /></div>
+            <div>
+              <h2 className="text-xs font-black uppercase tracking-widest text-app-text">Directorio</h2>
+              <p className="text-[9px] text-app-muted">{entities.length} entidades registradas</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 flex-1 justify-end">
+            <div className="relative flex-1 max-w-sm group">
+              <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-app-muted group-focus-within:text-pld-blue transition-colors" />
+              <input type="text" placeholder="Buscar cliente o proveedor (RUC/Nombre)..."
+                autoFocus
+                className="w-full pl-11 h-10 text-[11px] bg-app-bg border border-app-border rounded-xl outline-none focus:border-pld-blue focus:ring-4 focus:ring-pld-blue/5 transition-all shadow-sm"
+                style={{ paddingLeft: '2.75rem' }}
+                value={query} onChange={e => setQuery(e.target.value)} />
+            </div>
+            <button onClick={() => { resetForm(); setShowModal(true); }}
+              className="h-9 bg-pld-blue hover:bg-blue-700 text-white font-bold px-4 rounded-xl flex items-center gap-2 transition-all text-[10px] uppercase tracking-wider shadow-sm shadow-pld-blue/20 shrink-0">
+              <PlusCircle size={14} /> Nueva Entidad
+            </button>
+          </div>
+        </div>
+
+        {/* Table */}
+        <div className="flex-1 overflow-auto custom-scrollbar">
+          {filteredData.length > 0 ? (
+            <DataTable
+              columns={columns}
+              data={filteredData}
+              emptyMessage="Sin entidades registradas"
+              headerClassName="bg-app-bg/80 text-app-muted uppercase text-[9px] font-black h-10 sticky top-0 backdrop-blur-md"
+              rowClassName="h-11 border-b border-app-border/30 hover:bg-app-hover cursor-default transition-colors"
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center py-20 text-app-muted">
+              <FileText size={40} strokeWidth={1.5} className="mb-3 opacity-30" />
+              <p className="text-xs font-bold uppercase tracking-widest mb-1">
+                {query ? 'Sin resultados' : 'Directorio vacío'}
+              </p>
+              <p className="text-[10px] opacity-70">
+                {query ? `No se encontró "${query}"` : 'Agrega clientes o proveedores para comenzar'}
+              </p>
+              {!query && (
+                <button onClick={() => { resetForm(); setShowModal(true); }}
+                  className="mt-4 h-9 px-5 bg-pld-blue text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-pld-blue/20">
+                  + Agregar
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Add/Edit Modal */}
+      <Modal open={showModal} onClose={resetForm} title={editingId ? 'Editar Entidad' : 'Nueva Entidad'} subtitle="Directorio de Clientes y Proveedores">
+        <form onSubmit={handleSave} className="space-y-5">
+          <div className="grid grid-cols-12 gap-4">
+            <div className="col-span-4 space-y-1.5">
+              <label className="block text-[10px] font-black uppercase tracking-widest text-app-muted">Tipo Doc</label>
+              <select value={tipo} onChange={e => setTipo(e.target.value)}
+                className="w-full h-11 bg-app-bg border border-app-border rounded-xl px-3 text-xs font-bold outline-none focus:border-pld-blue">
+                <option value="6">RUC (6)</option>
+                <option value="1">DNI (1)</option>
+                <option value="4">CE (4)</option>
+                <option value="0">OTROS (0)</option>
+              </select>
+            </div>
+            <div className="col-span-8 space-y-1.5">
+              <label className="block text-[10px] font-black uppercase tracking-widest text-app-muted">N° Identificación</label>
+              <div className="flex gap-2">
+                <input type="text" maxLength={11} required placeholder="20XXXXXXXXX" value={ruc}
+                  onChange={e => setRuc(e.target.value)}
+                  className="flex-1 h-11 bg-app-bg border border-app-border rounded-xl px-3 text-sm font-mono font-bold outline-none focus:border-pld-blue" />
+                {tipo === '6' && (
+                  <button type="button" onClick={handleConsultarRuc}
+                    disabled={isLoadingRuc || ruc.length < 11}
+                    className="bg-pld-blue/10 text-pld-blue h-11 px-4 rounded-xl hover:bg-pld-blue/20 disabled:opacity-30 transition-all flex items-center">
+                    {isLoadingRuc ? <Loader2 size={16} className="animate-spin" /> : <Globe size={16} />}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-[10px] font-black uppercase tracking-widest text-app-muted">Razón Social / Nombre</label>
+            <textarea required rows={2}
+              className="w-full bg-app-bg border border-app-border rounded-xl p-3 text-sm font-bold uppercase outline-none focus:border-pld-blue resize-none"
+              placeholder="Nombre completo..." value={descripcion} onChange={e => setDescripcion(e.target.value)} />
+          </div>
+
+          <div className="pt-4 flex flex-col gap-2.5">
+            <button type="submit"
+              className="w-full h-12 bg-pld-blue hover:bg-blue-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-pld-blue/15 flex items-center justify-center gap-2">
+              {editingId ? 'Guardar Cambios' : 'Registrar Entidad'}
+            </button>
+            <button type="button" onClick={resetForm}
+              className="w-full h-12 border border-app-border hover:bg-app-hover rounded-xl text-xs font-bold uppercase transition-colors">
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </Modal>
+    </div>
+  );
+};
+
+export default CliProView;
