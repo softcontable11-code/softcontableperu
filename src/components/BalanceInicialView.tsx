@@ -136,6 +136,7 @@ export default function BalanceInicialView() {
   const createAndAddAccount = async () => {
     if (!showPicker) return;
     
+    const toastId = toast.loading('Creando cuenta...');
     try {
       const isNumber = /^\d+$/.test(searchTerm);
       const newCta = isNumber ? searchTerm : '00';
@@ -150,22 +151,28 @@ export default function BalanceInicialView() {
         haber: 0
       };
 
-      // Guardar en el Plan Contable Maestro
-      await addAccount({
-        cta: newCta,
-        description: newDesc,
-        type: 'Balance'
-      });
+      console.log('[DEBUG] Intentando crear cuenta:', newItem);
 
-      // Insertar en el Balance Inicial
+      // 1. Guardar en el Plan Contable Maestro
+      if (typeof addAccount === 'function') {
+        await addAccount({
+          cta: newCta,
+          description: newDesc,
+          type: 'Balance'
+        });
+      } else {
+        throw new Error('addAccount no está disponible');
+      }
+
+      // 2. Insertar en el Balance Inicial
       await saveBalanceInicialItem(newItem);
       
       setShowPicker(null);
       setSearchTerm('');
-      toast.success('Cuenta creada con éxito');
+      toast.success('Cuenta creada con éxito', { id: toastId });
     } catch (error) {
-      console.error('Error al crear cuenta:', error);
-      toast.error('No se pudo crear la cuenta');
+      console.error('[DB ERROR] Error al crear cuenta:', error);
+      toast.error('No se pudo crear la cuenta', { id: toastId });
     }
   };
 
