@@ -393,20 +393,34 @@ const dbManager = {
 // --- Carga Inicial de Plan Contable (si está vacío) ---
 const planCount = db.prepare('SELECT COUNT(*) as count FROM plan_global').get().count;
 if (planCount === 0) {
-    console.log('[DB] Inicializando Plan Contable básico...');
-    const basicPlan = [
-        { cta: '101', desc: 'Caja', type: 'Activo' },
-        { cta: '1041', desc: 'Cuentas Corrientes Operativas', type: 'Activo' },
-        { cta: '1212', desc: 'Facturas por Cobrar - Emitidas', type: 'Activo' },
-        { cta: '40111', desc: 'IGV - Cuenta Propia', type: 'Pasivo' },
-        { cta: '4212', desc: 'Facturas por Pagar - Emitidas', type: 'Pasivo' },
-        { cta: '6011', desc: 'Mercaderías manufacturadas', type: 'Gasto' },
-        { cta: '70111', desc: 'Mercaderías manufacturadas - Terceros', type: 'Ingreso' }
-    ];
-    const insertPlan = db.prepare('INSERT INTO plan_global (cta, description, type, reqCenCos) VALUES (?, ?, ?, 0)');
-    db.transaction(() => {
-        basicPlan.forEach(p => insertPlan.run(p.cta, p.desc, p.type));
-    })();
+    try {
+        const planPath = path.join(__dirname, 'planContable.json');
+        if (fs.existsSync(planPath)) {
+            const fullPlan = JSON.parse(fs.readFileSync(planPath, 'utf8'));
+            console.log(`[DB] Inicializando Plan Contable con ${fullPlan.length} cuentas...`);
+            
+            const insertPlan = db.prepare(`
+                INSERT INTO plan_global (cta, description, type, reqCenCos, amarreDebe, amarreHaber) 
+                VALUES (?, ?, ?, ?, ?, ?)
+            `);
+            
+            db.transaction(() => {
+                for (const p of fullPlan) {
+                    insertPlan.run(
+                        p.cta, 
+                        p.description, 
+                        p.type, 
+                        p.reqCenCos ? 1 : 0, 
+                        p.amarreDebe || null, 
+                        p.amarreHaber || null
+                    );
+                }
+            })();
+            console.log('[DB] Plan Contable inicializado con éxito.');
+        }
+    } catch (error) {
+        console.error('[DB ERROR] Error cargando planContable.json:', error.message);
+    }
 }
 
 module.exports = dbManager;
