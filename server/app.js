@@ -98,6 +98,16 @@ app.post('/api/db/backup', async (req, res) => {
     }
 });
 
+app.get('/api/db/analytics/ccc/:ruc', async (req, res) => {
+    try {
+        const metrics = await db.getCCCMetrics(req.params.ruc, req.user.id);
+        res.json({ success: true, metrics });
+    } catch (error) {
+        console.error('[DB ERROR] Error en analytics CCC:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 // --- API Endpoints: Buzon SUNAT ---
 
 app.post('/api/buzon/consultar', async (req, res) => {

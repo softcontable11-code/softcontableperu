@@ -387,6 +387,32 @@ const dbManager = {
             console.error('[BACKUP ERROR]:', error);
             throw error;
         }
+    },
+
+    getCCCMetrics: (ruc, userId) => {
+        // Cálculo simplificado de métricas CCC para la web
+        const querySaldo = (ctaPrefix) => {
+            const row = db.prepare(`
+                SELECT SUM(debe) - SUM(haber) as saldo 
+                FROM journal 
+                WHERE workspace_id = ? AND user_id = ? AND cta LIKE ?
+            `).get(ruc, userId, `${ctaPrefix}%`);
+            return row?.saldo || 0;
+        };
+
+        const inventario = querySaldo('20');
+        const cobrar = querySaldo('12');
+        const pagar = Math.abs(querySaldo('42'));
+        
+        // Ventas y Compras anualizadas (estimado)
+        const ventas = Math.abs(querySaldo('70'));
+        const compras = querySaldo('60');
+
+        return {
+            dio: ventas > 0 ? (inventario / (ventas / 360)) : 0,
+            dso: ventas > 0 ? (cobrar / (ventas / 360)) : 0,
+            dpo: compras > 0 ? (pagar / (compras / 360)) : 0
+        };
     }
 };
 
