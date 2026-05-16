@@ -273,13 +273,17 @@ export interface InventoryMovement {
   total_saldo: number;
   reference_id?: string;
 }
+export type SectionType = 'ACTIVO_CORRIENTE' | 'ACTIVO_NO_CORRIENTE' | 'PASIVO_CORRIENTE' | 'PASIVO_NO_CORRIENTE' | 'PATRIMONIO';
 
 export interface BalanceInicialItem {
   id: string;
+  workspace_id?: string;
+  user_id?: string;
   cta: string;
   desc: string;
   debe: number;
   haber: number;
+  section: SectionType;
 }
 
 export type RegimenCode = 'RG' | 'MYPE' | 'RER' | 'NRUS';

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { useStore, BalanceInicialItem } from '../store';
+import { useStore, BalanceInicialItem, SectionType } from '../store';
 import { 
   Calculator, 
   Printer, 
@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-type SectionType = 'ACTIVO_CORRIENTE' | 'ACTIVO_NO_CORRIENTE' | 'PASIVO_CORRIENTE' | 'PASIVO_NO_CORRIENTE' | 'PATRIMONIO';
+// type SectionType = ... (eliminado para usar el del store)
 
 const DEFAULT_STRUCTURE: { cta: string; desc: string; section: SectionType }[] = [
   { cta: '101', desc: 'Caja y Bancos', section: 'ACTIVO_CORRIENTE' },
