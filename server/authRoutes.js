@@ -11,10 +11,12 @@ const JWT_SECRET = process.env.JWT_SECRET || 'softcontable-super-secret-key-2026
 router.post('/register', async (req, res) => {
     try {
         const { email, password, name } = req.body;
+        console.log(`[AUTH] Intento de registro: ${email}`);
 
         // Verificar si ya existe
         const existingUser = dbManager.getUserByEmail(email);
         if (existingUser) {
+            console.warn(`[AUTH] El correo ${email} ya existe.`);
             return res.status(400).json({ success: false, error: 'El correo ya está registrado' });
         }
 
@@ -41,15 +43,18 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
+        console.log(`[AUTH] Intento de login: ${email}`);
 
         const user = dbManager.getUserByEmail(email);
         if (!user) {
-            return res.status(400).json({ success: false, error: 'Usuario o contraseña incorrectos' });
+            console.warn(`[AUTH] Usuario no encontrado: ${email}`);
+            return res.status(400).json({ success: false, error: 'Usuario no encontrado' });
         }
 
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
-            return res.status(400).json({ success: false, error: 'Usuario o contraseña incorrectos' });
+            console.warn(`[AUTH] Contraseña incorrecta para: ${email}`);
+            return res.status(400).json({ success: false, error: 'Contraseña incorrecta' });
         }
 
         // Crear Token
