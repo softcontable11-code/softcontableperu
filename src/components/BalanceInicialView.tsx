@@ -378,15 +378,15 @@ const BalanceInicialView: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-slate-100 dark:bg-slate-950 overflow-hidden transition-colors duration-300">
+    <div className="flex flex-col h-full bg-app-bg overflow-hidden transition-colors duration-300">
       {/* Header Toolbar */}
-      <div className="h-14 px-6 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0 shadow-sm z-30">
+      <div className="h-14 px-6 bg-app-surface border-b border-app-border flex items-center justify-between shrink-0 shadow-sm z-30">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg">
             <Calculator size={20} strokeWidth={2.5} />
           </div>
           <div>
-            <h1 className="text-sm font-black uppercase tracking-tighter dark:text-white">Balance Inicial Inteligente</h1>
+            <h1 className="text-sm font-black uppercase tracking-tighter text-app-text">Balance Inicial Inteligente</h1>
             <p className={`text-[9px] font-bold uppercase ${diff < 0.01 ? 'text-emerald-600' : 'text-rose-500'}`}>
                {diff < 0.01 ? '✓ Balance Cuadrado' : `⚠ Descuadre: S/ ${diff.toFixed(2)}`}
             </p>
@@ -447,19 +447,19 @@ const BalanceInicialView: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto custom-scrollbar overscroll-contain bg-slate-100 dark:bg-slate-950 transition-colors duration-500">
-        <div className="max-w-7xl mx-auto my-6 bg-white dark:bg-slate-900 shadow-xl dark:shadow-none p-12 border border-slate-200 dark:border-slate-800 rounded-sm min-h-[1200px] print:p-0 print:shadow-none print:border-none transition-all duration-300">
+      <div className="flex-1 overflow-auto custom-scrollbar overscroll-contain bg-app-bg transition-colors duration-500">
+        <div className="max-w-7xl mx-auto my-6 bg-app-surface shadow-xl p-12 border border-app-border rounded-sm min-h-[1200px] print:p-0 print:shadow-none print:border-none transition-all duration-300">
           
           {/* Header Info */}
-          <div className="mb-8 border-b border-slate-800 dark:border-slate-700 pb-4">
-            <h2 className="text-sm font-black uppercase mb-4 tracking-tighter dark:text-white">FORMATO 3.1 : "LIBRO DE INVENTARIOS Y BALANCES - BALANCE GENERAL"</h2>
+          <div className="mb-8 border-b border-app-border pb-4">
+            <h2 className="text-sm font-black uppercase mb-4 tracking-tighter text-app-text">FORMATO 3.1 : "LIBRO DE INVENTARIOS Y BALANCES - BALANCE GENERAL"</h2>
             <div className="grid grid-cols-[140px_1fr] gap-x-4 gap-y-1 text-[11px] font-bold">
-              <span className="text-slate-500 uppercase">EJERCICIO:</span>
-              <span className="text-slate-900 dark:text-slate-200">{currentCompany?.period}</span>
-              <span className="text-slate-500 uppercase">RUC:</span>
-              <span className="text-slate-900 dark:text-slate-200">{currentCompany?.ruc}</span>
-              <span className="text-slate-500 uppercase">RAZÓN SOCIAL:</span>
-              <span className="text-slate-900 dark:text-slate-200 uppercase">{currentCompany?.name}</span>
+              <span className="text-app-muted uppercase">EJERCICIO:</span>
+              <span className="text-app-text">{currentCompany?.period}</span>
+              <span className="text-app-muted uppercase">RUC:</span>
+              <span className="text-app-text">{currentCompany?.ruc}</span>
+              <span className="text-app-muted uppercase">RAZÓN SOCIAL:</span>
+              <span className="text-app-text uppercase">{currentCompany?.name}</span>
             </div>
           </div>
 
