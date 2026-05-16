@@ -265,6 +265,24 @@ function addUserIdColumn(tableName) {
 // Asegurar user_id en todas las tablas por si acaso
 ['workspaces', 'purchases', 'sales', 'journal', 'entities', 'asientos', 'products', 'inventory_movements', 'cash_movements', 'fixed_assets', 'employees', 'balance_inicial', 'maintenance', 'costs', 'honorarios', 'movimientos_data'].forEach(addUserIdColumn);
 
+// --- Migración Forzada: Crear balance_inicial si no existe ---
+try {
+    db.exec(`
+        CREATE TABLE IF NOT EXISTS balance_inicial (
+            id TEXT PRIMARY KEY,
+            workspace_id TEXT,
+            user_id TEXT,
+            cta TEXT,
+            desc TEXT,
+            debe REAL DEFAULT 0,
+            haber REAL DEFAULT 0
+        )
+    `);
+    console.log('[DB] Tabla balance_inicial verificada/creada.');
+} catch (e) {
+    console.error('[DB ERROR] No se pudo crear balance_inicial:', e.message);
+}
+
 const dbManager = {
     // --- Gestión de Usuarios ---
     createUser: (u) => {
