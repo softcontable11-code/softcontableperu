@@ -413,6 +413,19 @@ const dbManager = {
             dso: ventas > 0 ? (cobrar / (ventas / 360)) : 0,
             dpo: compras > 0 ? (pagar / (compras / 360)) : 0
         };
+    },
+
+    saveBalanceInicial: (ruc, userId, item) => {
+        return db.prepare(`
+            INSERT OR REPLACE INTO balance_inicial (id, workspace_id, user_id, cta, desc, debe, haber)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        `).run(item.id, ruc, userId, item.cta, item.desc, item.debe, item.haber);
+    },
+
+    deleteBalanceInicial: (ruc, userId, id) => {
+        return db.prepare(`
+            DELETE FROM balance_inicial WHERE id = ? AND workspace_id = ? AND user_id = ?
+        `).run(id, ruc, userId);
     }
 };
 

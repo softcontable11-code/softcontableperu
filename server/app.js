@@ -108,6 +108,24 @@ app.get('/api/db/analytics/ccc/:ruc', async (req, res) => {
     }
 });
 
+app.post('/api/db/balance-inicial/:ruc', async (req, res) => {
+    try {
+        await db.saveBalanceInicial(req.params.ruc, req.user.id, req.body);
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+app.delete('/api/db/balance-inicial/:ruc/:id', async (req, res) => {
+    try {
+        await db.deleteBalanceInicial(req.params.ruc, req.user.id, req.params.id);
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 // --- API Endpoints: Buzon SUNAT ---
 
 app.post('/api/buzon/consultar', async (req, res) => {

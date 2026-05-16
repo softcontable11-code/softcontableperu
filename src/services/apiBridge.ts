@@ -63,6 +63,18 @@ export const webApiBridge = {
         const res = await api.post(`/api/db/clear-workspace/${ruc}`);
         return res.data;
     },
+    dbSaveBalanceInicial: async (ruc: string, item: any) => {
+        const res = await api.post(`/api/db/balance-inicial/${ruc}`, item);
+        return res.data;
+    },
+    dbDeleteBalanceInicial: async (ruc: string, id: string) => {
+        const res = await api.delete(`/api/db/balance-inicial/${ruc}/${id}`);
+        return res.data;
+    },
+    analyticsCCCMetrics: async (ruc: string) => {
+        const res = await api.get(`/api/db/analytics/ccc/${ruc}`);
+        return res.data.metrics;
+    }
 
     // --- Buzon API ---
     buzonConsultar: async (args: any) => {

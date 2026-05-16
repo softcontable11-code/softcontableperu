@@ -448,8 +448,8 @@ const BalanceInicialView: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto custom-scrollbar overscroll-contain">
-        <div className="max-w-7xl mx-auto my-10 bg-white dark:bg-slate-900 shadow-2xl p-12 border border-slate-200 dark:border-slate-800 rounded-sm min-h-[1200px] print:p-0 print:shadow-none print:border-none transition-colors duration-300">
+      <div className="flex-1 overflow-auto custom-scrollbar overscroll-contain bg-slate-100 dark:bg-slate-950 transition-colors duration-500">
+        <div className="max-w-7xl mx-auto my-6 bg-white dark:bg-slate-900 shadow-xl dark:shadow-none p-12 border border-slate-200 dark:border-slate-800 rounded-sm min-h-[1200px] print:p-0 print:shadow-none print:border-none transition-all duration-300">
           
           {/* Header Info */}
           <div className="mb-8 border-b border-slate-800 dark:border-slate-700 pb-4">
