@@ -53,23 +53,13 @@ db.exec(`
         doc_tipo TEXT,
         doc_num TEXT,
         nombre TEXT,
-        tipOper TEXT,
-        tipOperCode TEXT,
-        ctaGasto TEXT,
-        ctaAbono TEXT,
-        moneda TEXT,
         tc REAL,
         bi REAL,
         igv REAL,
         noGravada REAL,
         isc REAL,
-        icbper REAL DEFAULT 0,
-        otros_tributos REAL DEFAULT 0,
         total REAL,
         glosa TEXT,
-        detraccion REAL,
-        car TEXT,
-        estado_sire TEXT DEFAULT 'Local',
         user_id TEXT,
         FOREIGN KEY(workspace_id) REFERENCES workspaces(ruc) ON DELETE CASCADE
     );
@@ -86,18 +76,13 @@ db.exec(`
         doc_tipo TEXT,
         doc_num TEXT,
         nombre TEXT,
-        moneda TEXT,
         tc REAL,
         bi REAL,
         igv REAL,
         noGravada REAL,
         isc REAL,
-        icbper REAL DEFAULT 0,
-        otros_tributos REAL DEFAULT 0,
         total REAL,
         glosa TEXT,
-        car TEXT,
-        estado_sire TEXT DEFAULT 'Local',
         user_id TEXT,
         FOREIGN KEY(workspace_id) REFERENCES workspaces(ruc) ON DELETE CASCADE
     );
@@ -136,7 +121,7 @@ db.exec(`
         FOREIGN KEY(workspace_id) REFERENCES workspaces(ruc) ON DELETE CASCADE
     );
 
-    CREATE TABLE IF NOT EXISTS seats (
+    CREATE TABLE IF NOT EXISTS asientos (
         id TEXT PRIMARY KEY,
         workspace_id TEXT,
         header_json TEXT,
@@ -145,13 +130,108 @@ db.exec(`
         FOREIGN KEY(workspace_id) REFERENCES workspaces(ruc) ON DELETE CASCADE
     );
 
-    CREATE TABLE IF NOT EXISTS assets (
+    CREATE TABLE IF NOT EXISTS honorarios (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT,
+        fecha TEXT,
+        tipo_doc TEXT,
+        serie TEXT,
+        numero TEXT,
+        doc_num TEXT,
+        nombre TEXT,
+        total REAL,
+        user_id TEXT,
+        FOREIGN KEY(workspace_id) REFERENCES workspaces(ruc) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS costs (
         id TEXT PRIMARY KEY,
         workspace_id TEXT,
         codigo TEXT,
         descripcion TEXT,
+        monto REAL,
+        user_id TEXT,
+        FOREIGN KEY(workspace_id) REFERENCES workspaces(ruc) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS maintenance (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT,
+        descripcion TEXT,
+        monto REAL,
+        user_id TEXT,
+        FOREIGN KEY(workspace_id) REFERENCES workspaces(ruc) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS movimientos_data (
+        workspace_id TEXT,
+        period TEXT,
+        month INTEGER,
+        section TEXT,
+        key TEXT,
+        value REAL,
+        user_id TEXT,
+        PRIMARY KEY(workspace_id, period, month, section, key, user_id),
+        FOREIGN KEY(workspace_id) REFERENCES workspaces(ruc) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS glosas_habituales (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT,
+        category TEXT,
+        glosa TEXT,
+        lines_json TEXT,
+        user_id TEXT,
+        FOREIGN KEY(workspace_id) REFERENCES workspaces(ruc) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS products (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT,
+        code TEXT,
+        name TEXT,
+        user_id TEXT,
+        FOREIGN KEY(workspace_id) REFERENCES workspaces(ruc) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS fixed_assets (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT,
+        descripcion TEXT,
         costo REAL,
-        tasa REAL,
+        user_id TEXT,
+        FOREIGN KEY(workspace_id) REFERENCES workspaces(ruc) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS employees (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT,
+        nombre TEXT,
+        user_id TEXT,
+        FOREIGN KEY(workspace_id) REFERENCES workspaces(ruc) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS balance_inicial (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT,
+        cta TEXT,
+        debe REAL,
+        haber REAL,
+        user_id TEXT,
+        FOREIGN KEY(workspace_id) REFERENCES workspaces(ruc) ON DELETE CASCADE
+    );
+    
+    CREATE TABLE IF NOT EXISTS inventory_movements (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT,
+        product_id TEXT,
+        user_id TEXT,
+        FOREIGN KEY(workspace_id) REFERENCES workspaces(ruc) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS cash_movements (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT,
         user_id TEXT,
         FOREIGN KEY(workspace_id) REFERENCES workspaces(ruc) ON DELETE CASCADE
     );
