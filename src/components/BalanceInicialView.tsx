@@ -49,7 +49,7 @@ const EditableCell = ({ value, onSave, className, placeholder, type = 'text', al
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
-      e.currentTarget.blur();
+      (e.currentTarget as HTMLInputElement).blur();
     }
   };
 
@@ -90,8 +90,8 @@ export default function BalanceInicialView() {
   const filteredAccounts = useMemo(() => {
     if (!showPicker) return [];
     return plan.filter(acc => 
-      (acc.cta.startsWith(searchTerm) || acc.desc.toLowerCase().includes(searchTerm.toLowerCase())) &&
-      acc.cta.length >= 2
+      ((acc.cta || '').startsWith(searchTerm) || (acc.description || '').toLowerCase().includes(searchTerm.toLowerCase())) &&
+      (acc.cta || '').length >= 2
     ).slice(0, 10);
   }, [plan, searchTerm, showPicker]);
 
@@ -121,12 +121,12 @@ export default function BalanceInicialView() {
     }
   };
 
-  const selectAccount = async (cta: string, desc: string) => {
+  const selectAccount = async (cta: string, description: string) => {
     if (!showPicker) return;
     const newItem: BalanceInicialItem = {
       id: `custom-${Date.now()}`,
       cta,
-      desc,
+      desc: description,
       section: showPicker.section,
       debe: 0,
       haber: 0
@@ -219,12 +219,12 @@ export default function BalanceInicialView() {
               {filteredAccounts.map(acc => (
                 <button 
                   key={acc.cta}
-                  onClick={() => selectAccount(acc.cta, acc.desc)}
+                  onClick={() => selectAccount(acc.cta, acc.description)}
                   className="w-full px-6 py-3 flex items-center justify-between hover:bg-app-hover transition-colors text-left border-b border-app-border/30 last:border-none"
                 >
                   <div className="flex items-center gap-4">
                     <span className="text-[11px] font-black text-blue-600 w-12">{acc.cta}</span>
-                    <span className="text-[10px] font-bold text-app-text uppercase">{acc.desc}</span>
+                    <span className="text-[10px] font-bold text-app-text uppercase">{acc.description}</span>
                   </div>
                   <Plus size={14} className="text-emerald-500" />
                 </button>
