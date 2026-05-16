@@ -43,16 +43,18 @@ export default function BalanceInicialView() {
 
   // --- Lógica de Datos y Cálculos ---
   const items = useMemo(() => {
-    // Ordenar por sección y luego por cuenta
+    // Ordenar por sección y luego por cuenta (con seguridad)
     return [...balanceInicial].sort((a, b) => {
-      if (a.section !== b.section) return 0; // Mantener orden de secciones del render
-      return a.cta.localeCompare(b.cta);
+      const sectionA = a.section || 'ACTIVO_CORRIENTE';
+      const sectionB = b.section || 'ACTIVO_CORRIENTE';
+      if (sectionA !== sectionB) return 0; 
+      return (a.cta || '').localeCompare(b.cta || '');
     });
   }, [balanceInicial]);
 
   const totals = useMemo(() => {
-    const activo = items.filter(i => i.section.startsWith('ACTIVO')).reduce((acc, i) => acc + (i.debe || 0), 0);
-    const pasivoPat = items.filter(i => !i.section.startsWith('ACTIVO')).reduce((acc, i) => acc + (i.haber || 0), 0);
+    const activo = items.filter(i => (i.section || '').startsWith('ACTIVO')).reduce((acc, i) => acc + (i.debe || 0), 0);
+    const pasivoPat = items.filter(i => !(i.section || '').startsWith('ACTIVO')).reduce((acc, i) => acc + (i.haber || 0), 0);
     return { activo, pasivoPat, diff: Math.abs(activo - pasivoPat) };
   }, [items]);
 
