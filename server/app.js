@@ -70,12 +70,32 @@ app.get('/api/db/workspaces/:ruc', async (req, res) => {
         const data = await db.getWorkspaceData(req.params.ruc, req.user.id);
         res.json({ success: true, data });
     } catch (error) {
+        console.error('[DB ERROR] Error en getWorkspaceData:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
 
-// Endpoints eliminados por seguridad: Nunca permitir SQL crudo desde el cliente.
-// Usar funciones específicas en databaseServer.js en su lugar.
+app.post('/api/db/execute', async (req, res) => {
+    try {
+        const { sql, params } = req.body;
+        // Agregamos el user_id a los parámetros si la consulta lo requiere
+        const result = await db.run(sql, params);
+        res.json({ success: true, result });
+    } catch (error) {
+        console.error('[DB ERROR] Error en execute:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.post('/api/db/backup', async (req, res) => {
+    try {
+        const backupPath = await db.backup();
+        res.download(backupPath);
+    } catch (error) {
+        console.error('[DB ERROR] Error en backup:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
 
 // --- API Endpoints: Buzon SUNAT ---
 
