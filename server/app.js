@@ -110,11 +110,15 @@ app.get('/api/db/analytics/ccc/:ruc', async (req, res) => {
 
 app.post('/api/db/balance-inicial/:ruc', async (req, res) => {
     try {
-        console.log(`[DB] Guardando fila balance inicial para RUC: ${req.params.ruc}`);
-        await db.saveBalanceInicial(req.params.ruc, req.user.id, req.body);
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({ success: false, error: 'Usuario no autenticado' });
+        }
+        
+        console.log(`[DB] Guardando fila balance inicial para RUC: ${req.params.ruc} - Usuario: ${req.user.id}`);
+        db.saveBalanceInicial(req.params.ruc, req.user.id, req.body);
         res.json({ success: true });
     } catch (error) {
-        console.error('[DB ERROR] Fallo al guardar balance inicial:', error);
+        console.error('[DB ERROR] Fallo crítico al guardar balance inicial:', error.message);
         res.status(500).json({ success: false, error: error.message });
     }
 });
