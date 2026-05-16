@@ -1116,7 +1116,8 @@ export const useStore = create<AppState>()(
       },
 
       deleteBalanceInicialItem: async (id) => {
-        await electron.dbDeleteBalanceInicial(id);
+        const ruc = get().currentCompany?.ruc || '';
+        await electron.dbDeleteBalanceInicial(ruc, id);
         set({ balanceInicial: get().balanceInicial.filter(x => x.id !== id) });
       },
 

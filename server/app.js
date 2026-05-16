@@ -110,28 +110,33 @@ app.get('/api/db/analytics/ccc/:ruc', async (req, res) => {
 
 app.post('/api/db/balance-inicial/:ruc', async (req, res) => {
     try {
+        console.log(`[DB] POST /balance-inicial/${req.params.ruc} - Body:`, JSON.stringify(req.body));
         await db.saveBalanceInicial(req.params.ruc, req.user.id, req.body);
         res.json({ success: true });
     } catch (error) {
+        console.error('[DB ERROR] Error en saveBalanceInicial:', error.message);
         res.status(500).json({ success: false, error: error.message });
     }
 });
 
 app.post('/api/db/balance-inicial/bulk/:ruc', async (req, res) => {
     try {
+        console.log(`[DB] POST /balance-inicial/bulk/${req.params.ruc} - Items: ${req.body.items?.length}`);
         await db.saveBalanceInicialBulk(req.params.ruc, req.user.id, req.body.items);
         res.json({ success: true });
     } catch (error) {
-        console.error('[DB ERROR] Error en guardado masivo:', error);
+        console.error('[DB ERROR] Error en saveBalanceInicialBulk:', error.message);
         res.status(500).json({ success: false, error: error.message });
     }
 });
 
 app.delete('/api/db/balance-inicial/:ruc/:id', async (req, res) => {
     try {
+        console.log(`[DB] DELETE /balance-inicial/${req.params.ruc}/${req.params.id}`);
         await db.deleteBalanceInicial(req.params.ruc, req.user.id, req.params.id);
         res.json({ success: true });
     } catch (error) {
+        console.error('[DB ERROR] Error en deleteBalanceInicial:', error.message);
         res.status(500).json({ success: false, error: error.message });
     }
 });
