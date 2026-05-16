@@ -53,7 +53,7 @@ const EditableCell = ({ value, onSave, className, placeholder, type = 'text', al
 };
 
 export default function BalanceInicialView() {
-  const { balanceInicial, currentCompany, saveBalanceInicialItem, saveBalanceInicialBulk, deleteBalanceInicialItem, setActiveTab, setDraftAsiento, plan, saveAccount } = useStore();
+  const { balanceInicial, currentCompany, saveBalanceInicialItem, saveBalanceInicialBulk, deleteBalanceInicialItem, setActiveTab, setDraftAsiento, plan, addAccount } = useStore();
   const [isInitializing, setIsInitializing] = useState(false);
   const [showPicker, setShowPicker] = useState<{ section: SectionType } | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -151,7 +151,7 @@ export default function BalanceInicialView() {
       };
 
       // Guardar en el Plan Contable Maestro
-      await saveAccount({
+      await addAccount({
         cta: newCta,
         description: newDesc,
         type: 'Balance'
