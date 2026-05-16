@@ -323,22 +323,22 @@ const BalanceInicialView: React.FC = () => {
     const sectionItems = items.filter(i => i.section === type);
     return (
       <div className="mb-4">
-        <div className="flex justify-between items-center bg-slate-50 border-b border-slate-300 px-2 py-1">
-          <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{title}</span>
-          <button onClick={() => handleAddRow(type)} className="p-1 hover:text-blue-600 transition-colors" title="Agregar fila">
+        <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-800 border-b border-slate-300 dark:border-slate-700 px-2 py-1">
+          <span className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">{title}</span>
+          <button onClick={() => handleAddRow(type)} className="p-1 hover:text-blue-600 dark:text-slate-300 transition-colors" title="Agregar fila">
             <Plus size={12} />
           </button>
         </div>
         {sectionItems.map(item => (
-          <div key={item.id} className="flex h-9 border-b border-slate-200 group hover:bg-blue-50/30">
-            <div className="flex-1 border-r border-slate-200 flex items-center">
+          <div key={item.id} className="flex h-9 border-b border-slate-200 dark:border-slate-800 group hover:bg-blue-50/30 dark:hover:bg-slate-800/50">
+            <div className="flex-1 border-r border-slate-200 dark:border-slate-800 flex items-center">
               <DescriptionInput 
                 initialValue={item.desc}
                 onUpdate={(val) => handleUpdateItem(item.id, { desc: val })}
-                className="w-full bg-transparent outline-none text-[11px] font-medium uppercase px-2"
+                className="w-full bg-transparent outline-none text-[11px] font-medium uppercase px-2 dark:text-white"
               />
             </div>
-            <div className="w-20 border-r border-slate-200 flex items-center justify-center">
+            <div className="w-20 border-r border-slate-200 dark:border-slate-800 flex items-center justify-center">
               <button 
                 onClick={() => setShowAccountModal(item.id)}
                 className={`text-[9px] font-black px-2 py-0.5 rounded transition-colors ${item.cta ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-rose-500 text-white animate-pulse hover:bg-rose-600'}`}
@@ -351,7 +351,7 @@ const BalanceInicialView: React.FC = () => {
               <FormattedNumberInput
                 initialValue={isRight ? (item.haber || '') : (item.debe || '')}
                 onUpdate={(val) => handleUpdateItem(item.id, isRight ? { haber: val, debe: 0 } : { debe: val, haber: 0 })}
-                className="w-full bg-transparent outline-none text-right font-mono text-[11px] font-bold pr-2"
+                className="w-full bg-transparent outline-none text-right font-mono text-[11px] font-bold pr-2 dark:text-white"
                 placeholder="0.00"
               />
               <button 
@@ -369,15 +369,15 @@ const BalanceInicialView: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-slate-100 overflow-hidden">
+    <div className="flex flex-col h-full bg-slate-100 dark:bg-slate-950 overflow-hidden">
       {/* Header Toolbar */}
-      <div className="h-14 px-6 bg-white border-b border-slate-200 flex items-center justify-between shrink-0 shadow-sm z-30">
+      <div className="h-14 px-6 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0 shadow-sm z-30">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg">
             <Calculator size={20} strokeWidth={2.5} />
           </div>
           <div>
-            <h1 className="text-sm font-black uppercase tracking-tighter">Balance Inicial Inteligente</h1>
+            <h1 className="text-sm font-black uppercase tracking-tighter dark:text-white">Balance Inicial Inteligente</h1>
             <p className={`text-[9px] font-bold uppercase ${diff < 0.01 ? 'text-emerald-600' : 'text-rose-500'}`}>
                {diff < 0.01 ? '✓ Balance Cuadrado' : `⚠ Descuadre: S/ ${diff.toFixed(2)}`}
             </p>
@@ -385,10 +385,10 @@ const BalanceInicialView: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          <button onClick={() => window.print()} className="h-9 px-4 bg-white border border-slate-200 rounded-lg text-[10px] font-black uppercase flex items-center gap-2">
+          <button onClick={() => window.print()} className="h-9 px-4 bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700 border border-slate-200 rounded-lg text-[10px] font-black uppercase flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
             <Printer size={15} /> Imprimir
           </button>
-          <button onClick={handleExportExcel} className="h-9 px-4 bg-white border border-slate-200 rounded-lg text-[10px] font-black uppercase flex items-center gap-2">
+          <button onClick={handleExportExcel} className="h-9 px-4 bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700 border border-slate-200 rounded-lg text-[10px] font-black uppercase flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
             <FileDown size={15} /> Excel
           </button>
           <div className="flex gap-4">
@@ -401,7 +401,6 @@ const BalanceInicialView: React.FC = () => {
                     let finalHaber = i.haber || 0;
 
                     // Lógica automática para cuentas de valuación (19, 29, 39)
-                    // Si el usuario las ingresó en el Activo (Debe), se trasladan al Haber para el asiento.
                     if (i.cta.startsWith('19') || i.cta.startsWith('29') || i.cta.startsWith('39')) {
                       if (finalDebe > 0) {
                         finalHaber = finalDebe;
@@ -431,7 +430,7 @@ const BalanceInicialView: React.FC = () => {
                 } as any);
                 setActiveTab('ASIENTOS');
               }}
-              className="h-10 px-6 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase shadow-lg flex items-center gap-2"
+              className="h-10 px-6 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase shadow-lg flex items-center gap-2 hover:bg-blue-700 transition-all active:scale-95"
             >
               <CheckCircle2 size={16} /> Generar Asiento
             </button>
@@ -440,48 +439,48 @@ const BalanceInicialView: React.FC = () => {
       </div>
 
       <div className="flex-1 overflow-auto custom-scrollbar overscroll-contain">
-        <div className="max-w-7xl mx-auto my-10 bg-white shadow-2xl p-12 border border-slate-200 rounded-sm min-h-[1200px] print:p-0 print:shadow-none print:border-none">
+        <div className="max-w-7xl mx-auto my-10 bg-white dark:bg-slate-900 shadow-2xl p-12 border border-slate-200 dark:border-slate-800 rounded-sm min-h-[1200px] print:p-0 print:shadow-none print:border-none transition-colors duration-300">
           
           {/* Header Info */}
-          <div className="mb-8 border-b border-slate-800 pb-4">
-            <h2 className="text-sm font-black uppercase mb-4 tracking-tighter">FORMATO 3.1 : "LIBRO DE INVENTARIOS Y BALANCES - BALANCE GENERAL"</h2>
+          <div className="mb-8 border-b border-slate-800 dark:border-slate-700 pb-4">
+            <h2 className="text-sm font-black uppercase mb-4 tracking-tighter dark:text-white">FORMATO 3.1 : "LIBRO DE INVENTARIOS Y BALANCES - BALANCE GENERAL"</h2>
             <div className="grid grid-cols-[140px_1fr] gap-x-4 gap-y-1 text-[11px] font-bold">
               <span className="text-slate-500 uppercase">EJERCICIO:</span>
-              <span className="text-slate-900">{currentCompany?.period}</span>
+              <span className="text-slate-900 dark:text-slate-200">{currentCompany?.period}</span>
               <span className="text-slate-500 uppercase">RUC:</span>
-              <span className="text-slate-900">{currentCompany?.ruc}</span>
+              <span className="text-slate-900 dark:text-slate-200">{currentCompany?.ruc}</span>
               <span className="text-slate-500 uppercase">RAZÓN SOCIAL:</span>
-              <span className="text-slate-900 uppercase">{currentCompany?.name}</span>
+              <span className="text-slate-900 dark:text-slate-200 uppercase">{currentCompany?.name}</span>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-10">
             {/* LEFT: ACTIVO */}
-            <div className="border border-slate-300">
-               <div className="flex bg-slate-900 text-white font-black text-[10px] uppercase">
+            <div className="border border-slate-300 dark:border-slate-700">
+               <div className="flex bg-slate-900 dark:bg-black text-white font-black text-[10px] uppercase">
                   <div className="flex-1 border-r border-slate-700 p-2">ACTIVO</div>
                   <div className="w-32 p-2 text-center">EJERCICIO O PERIODO</div>
                </div>
                {renderSection("Activo Corriente", "activo_corriente")}
                {renderSection("Activo No Corriente", "activo_no_corriente")}
-               <div className="flex bg-slate-100 border-t-2 border-slate-800 font-black p-2">
-                  <div className="flex-1 text-[11px] uppercase">TOTAL ACTIVO</div>
-                  <div className="w-32 text-right font-mono text-xs">{totalActivo.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+               <div className="flex bg-slate-100 dark:bg-slate-800 border-t-2 border-slate-800 dark:border-slate-600 font-black p-2">
+                  <div className="flex-1 text-[11px] uppercase dark:text-white">TOTAL ACTIVO</div>
+                  <div className="w-32 text-right font-mono text-xs dark:text-emerald-400">{totalActivo.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
                </div>
             </div>
 
             {/* RIGHT: PASIVO/PATRIMONIO */}
-            <div className="border border-slate-300">
-               <div className="flex bg-slate-900 text-white font-black text-[10px] uppercase">
+            <div className="border border-slate-300 dark:border-slate-700">
+               <div className="flex bg-slate-900 dark:bg-black text-white font-black text-[10px] uppercase">
                   <div className="flex-1 border-r border-slate-700 p-2">PASIVO Y PATRIMONIO</div>
                   <div className="w-32 p-2 text-center">EJERCICIO O PERIODO</div>
                </div>
                {renderSection("Pasivo Corriente", "pasivo_corriente", true)}
                {renderSection("Pasivo No Corriente", "pasivo_no_corriente", true)}
                {renderSection("Patrimonio Neto", "patrimonio", true)}
-               <div className="flex bg-slate-100 border-t-2 border-slate-800 font-black p-2">
-                  <div className="flex-1 text-[11px] uppercase">TOTAL PASIVO Y PATRIMONIO</div>
-                  <div className="w-32 text-right font-mono text-xs">{totalPasivoPatrimonio.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+               <div className="flex bg-slate-100 dark:bg-slate-800 border-t-2 border-slate-800 dark:border-slate-600 font-black p-2">
+                  <div className="flex-1 text-[11px] uppercase dark:text-white">TOTAL PASIVO Y PATRIMONIO</div>
+                  <div className="w-32 text-right font-mono text-xs dark:text-emerald-400">{totalPasivoPatrimonio.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
                </div>
             </div>
           </div>
@@ -499,18 +498,18 @@ const BalanceInicialView: React.FC = () => {
       {/* Account Modal */}
       {showAccountModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95">
-            <div className="p-6 border-b flex justify-between items-center bg-slate-50">
-               <h3 className="text-xs font-black uppercase tracking-widest">Asociar Cuenta Contable</h3>
-               <button onClick={() => setShowAccountModal(null)}><X size={20} /></button>
+          <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95">
+            <div className="p-6 border-b dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
+               <h3 className="text-xs font-black uppercase tracking-widest dark:text-white">Asociar Cuenta Contable</h3>
+               <button onClick={() => setShowAccountModal(null)} className="dark:text-white"><X size={20} /></button>
             </div>
             <div className="p-6">
               <input 
                 type="text" autoFocus placeholder="Buscar cuenta..." value={searchAccount}
                 onChange={e => setSearchAccount(e.target.value)}
-                className="w-full h-12 px-4 bg-slate-100 rounded-xl text-xs font-bold mb-4 outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full h-12 px-4 bg-slate-100 dark:bg-slate-800 dark:text-white dark:border-slate-700 border border-transparent rounded-xl text-xs font-bold mb-4 outline-none focus:ring-2 focus:ring-blue-500"
               />
-              <div className="max-h-80 overflow-auto space-y-1">
+              <div className="max-h-80 overflow-auto space-y-1 custom-scrollbar">
                 {getFilteredAccounts().map(acc => (
                   <button
                     key={acc.cta}
@@ -519,10 +518,10 @@ const BalanceInicialView: React.FC = () => {
                       setShowAccountModal(null);
                       setSearchAccount('');
                     }}
-                    className="w-full flex items-center gap-4 p-3 hover:bg-blue-50 rounded-lg text-left group"
+                    className="w-full flex items-center gap-4 p-3 hover:bg-blue-50 dark:hover:bg-slate-800 rounded-lg text-left group transition-colors"
                   >
-                    <span className="font-mono text-xs font-black text-blue-600 bg-blue-50 px-2 rounded">{acc.cta}</span>
-                    <span className="text-[10px] font-bold uppercase text-slate-700">{acc.description}</span>
+                    <span className="font-mono text-xs font-black text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400 px-2 rounded">{acc.cta}</span>
+                    <span className="text-[10px] font-bold uppercase text-slate-700 dark:text-slate-300">{acc.description}</span>
                   </button>
                 ))}
 
