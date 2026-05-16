@@ -14,7 +14,7 @@ if (!fs.existsSync(path.dirname(dbPath))) {
 const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
 
-// --- Inicialización Multi-Usuario ---
+// --- Inicialización Multi-Usuario y Esquema Completo ---
 db.exec(`
     CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY,
@@ -24,20 +24,154 @@ db.exec(`
         role TEXT DEFAULT 'user',
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE TABLE IF NOT EXISTS workspaces (
+        ruc TEXT PRIMARY KEY,
+        name TEXT,
+        regimenTributario TEXT,
+        location TEXT,
+        address TEXT,
+        support TEXT,
+        period TEXT,
+        logoBase64 TEXT,
+        sol_user BLOB,
+        sol_pass BLOB,
+        sunatClientId BLOB,
+        sunatClientSecret BLOB,
+        user_id TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS purchases (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT,
+        registro TEXT,
+        fecha TEXT,
+        fecVcto TEXT,
+        tipo_doc TEXT,
+        serie TEXT,
+        numero TEXT,
+        doc_tipo TEXT,
+        doc_num TEXT,
+        nombre TEXT,
+        tipOper TEXT,
+        tipOperCode TEXT,
+        ctaGasto TEXT,
+        ctaAbono TEXT,
+        moneda TEXT,
+        tc REAL,
+        bi REAL,
+        igv REAL,
+        noGravada REAL,
+        isc REAL,
+        icbper REAL DEFAULT 0,
+        otros_tributos REAL DEFAULT 0,
+        total REAL,
+        glosa TEXT,
+        detraccion REAL,
+        car TEXT,
+        estado_sire TEXT DEFAULT 'Local',
+        user_id TEXT,
+        FOREIGN KEY(workspace_id) REFERENCES workspaces(ruc) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS sales (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT,
+        registro TEXT,
+        fecha TEXT,
+        fecVcto TEXT,
+        tipo_doc TEXT,
+        serie TEXT,
+        numero TEXT,
+        doc_tipo TEXT,
+        doc_num TEXT,
+        nombre TEXT,
+        moneda TEXT,
+        tc REAL,
+        bi REAL,
+        igv REAL,
+        noGravada REAL,
+        isc REAL,
+        icbper REAL DEFAULT 0,
+        otros_tributos REAL DEFAULT 0,
+        total REAL,
+        glosa TEXT,
+        car TEXT,
+        estado_sire TEXT DEFAULT 'Local',
+        user_id TEXT,
+        FOREIGN KEY(workspace_id) REFERENCES workspaces(ruc) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS journal (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT,
+        source TEXT,
+        asiento TEXT,
+        fecha TEXT,
+        glosa TEXT,
+        cta TEXT,
+        desc TEXT,
+        debe REAL,
+        haber REAL,
+        user_id TEXT,
+        FOREIGN KEY(workspace_id) REFERENCES workspaces(ruc) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS plan_global (
+        cta TEXT PRIMARY KEY,
+        description TEXT,
+        type TEXT,
+        reqCenCos INTEGER,
+        amarreDebe TEXT,
+        amarreHaber TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS entities (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT,
+        tipo TEXT,
+        ruc TEXT,
+        descripcion TEXT,
+        user_id TEXT,
+        FOREIGN KEY(workspace_id) REFERENCES workspaces(ruc) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS seats (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT,
+        header_json TEXT,
+        lines_json TEXT,
+        user_id TEXT,
+        FOREIGN KEY(workspace_id) REFERENCES workspaces(ruc) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS assets (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT,
+        codigo TEXT,
+        descripcion TEXT,
+        costo REAL,
+        tasa REAL,
+        user_id TEXT,
+        FOREIGN KEY(workspace_id) REFERENCES workspaces(ruc) ON DELETE CASCADE
+    );
 `);
 
-// Función auxiliar para añadir columnas si no existen
+// Función auxiliar para añadir columnas si no existen (para migración de tablas existentes)
 function addUserIdColumn(tableName) {
     try {
-        db.exec(`ALTER TABLE ${tableName} ADD COLUMN user_id TEXT`);
-        console.log(`Columna user_id añadida a ${tableName}`);
+        const info = db.prepare(`PRAGMA table_info(${tableName})`).all();
+        if (!info.some(col => col.name === 'user_id')) {
+            db.exec(`ALTER TABLE ${tableName} ADD COLUMN user_id TEXT`);
+            console.log(`Columna user_id añadida a ${tableName}`);
+        }
     } catch (e) {
-        // Probablemente ya existe
+        console.error(`Error al verificar/añadir user_id a ${tableName}:`, e.message);
     }
 }
 
-// Asegurar que las tablas principales tengan user_id
-['workspaces', 'purchases', 'sales', 'journal', 'honorarios', 'entities', 'costs', 'maintenance', 'movimientos_data', 'asientos', 'products', 'inventory_movements', 'cash_movements', 'fixed_assets', 'employees', 'balance_inicial'].forEach(addUserIdColumn);
+// Asegurar user_id en todas las tablas por si acaso
+['workspaces', 'purchases', 'sales', 'journal', 'entities', 'asientos', 'products', 'inventory_movements', 'cash_movements', 'fixed_assets', 'employees', 'balance_inicial', 'maintenance', 'costs', 'honorarios', 'movimientos_data'].forEach(addUserIdColumn);
 
 const dbManager = {
     // --- Gestión de Usuarios ---

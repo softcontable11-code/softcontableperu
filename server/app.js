@@ -42,6 +42,7 @@ app.get('/api/db/workspaces', async (req, res) => {
         const workspaces = await db.getWorkspaces(req.user.id);
         res.json({ success: true, workspaces });
     } catch (error) {
+        console.error('[DB ERROR] Error en getWorkspaces:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
