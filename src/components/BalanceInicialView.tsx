@@ -89,10 +89,30 @@ export default function BalanceInicialView() {
 
   const filteredAccounts = useMemo(() => {
     if (!showPicker) return [];
-    return plan.filter(acc => 
-      ((acc.cta || '').startsWith(searchTerm) || (acc.description || '').toLowerCase().includes(searchTerm.toLowerCase())) &&
-      (acc.cta || '').length >= 2
-    ).slice(0, 10);
+    const section = showPicker.section;
+    
+    return plan.filter(acc => {
+      const cta = acc.cta || '';
+      const firstDigit = cta[0];
+      const isMatch = (cta.startsWith(searchTerm) || (acc.description || '').toLowerCase().includes(searchTerm.toLowerCase()));
+      
+      if (!isMatch || cta.length < 2) return false;
+
+      // Lógica de Segmentación Profesional (PCGE)
+      switch (section) {
+        case 'ACTIVO_CORRIENTE':
+          return ['1', '2'].includes(firstDigit);
+        case 'ACTIVO_NO_CORRIENTE':
+          return firstDigit === '3';
+        case 'PASIVO_CORRIENTE':
+        case 'PASIVO_NO_CORRIENTE':
+          return firstDigit === '4';
+        case 'PATRIMONIO':
+          return firstDigit === '5';
+        default:
+          return false;
+      }
+    }).slice(0, 15); // Aumentado a 15 para más opciones
   }, [plan, searchTerm, showPicker]);
 
   const handleUpdate = async (id: string, updates: Partial<BalanceInicialItem>) => {
