@@ -346,43 +346,46 @@ const SireView: React.FC = () => {
       </div>
 
       {/* ═══ ULTRA-COMPACT CONTROLS & STATS ═══ */}
-      <div className="flex flex-col xl:flex-row items-center gap-3 shrink-0">
+      {/* ═══ ULTRA-COMPACT CONTROLS & STATS ═══ */}
+      <div className="flex flex-col gap-3 shrink-0">
         
         {/* Compact Filters Group */}
-        <div className="w-full xl:w-auto card-elevated !p-2 flex flex-wrap items-center gap-2">
-          <div className="flex p-0.5 bg-app-bg rounded-lg border border-app-border">
-            <button
-              onClick={() => setProceso('Generar RCE')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[9px] font-bold uppercase transition-all ${proceso === 'Generar RCE' ? 'bg-app-surface text-app-text shadow-sm border border-app-border' : 'text-app-muted hover:text-blue-500'}`}
-            >
-              <TrendingDown size={12} /> Compras
-            </button>
-            <button
-              onClick={() => setProceso('Generar RVIE')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[9px] font-bold uppercase transition-all ${proceso === 'Generar RVIE' ? 'bg-app-surface text-app-text shadow-sm border border-app-border' : 'text-app-muted hover:text-indigo-500'}`}
-            >
-              <TrendingUp size={12} /> Ventas
-            </button>
+        <div className="w-full card-elevated !p-2 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex p-0.5 bg-app-bg rounded-lg border border-app-border">
+              <button
+                onClick={() => setProceso('Generar RCE')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[9px] font-bold uppercase transition-all ${proceso === 'Generar RCE' ? 'bg-app-surface text-app-text shadow-sm border border-app-border' : 'text-app-muted hover:text-blue-500'}`}
+              >
+                <TrendingDown size={12} /> Compras
+              </button>
+              <button
+                onClick={() => setProceso('Generar RVIE')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[9px] font-bold uppercase transition-all ${proceso === 'Generar RVIE' ? 'bg-app-surface text-app-text shadow-sm border border-app-border' : 'text-app-muted hover:text-indigo-500'}`}
+              >
+                <TrendingUp size={12} /> Ventas
+              </button>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <select
+                value={periodoMes}
+                onChange={(e) => setPeriodoMes(parseInt(e.target.value))}
+                className="bg-app-bg border-app-border text-[10px] font-black uppercase px-2 py-1.5 h-8"
+              >
+                {meses.map((m, i) => <option key={i} value={i}>{m}</option>)}
+              </select>
+              <select
+                value={periodoAnio}
+                onChange={(e) => setPeriodoAnio(parseInt(e.target.value))}
+                className="bg-app-bg border-app-border text-[10px] font-black uppercase px-2 py-1.5 h-8"
+              >
+                {anios.map(y => <option key={y} value={y}>{y}</option>)}
+              </select>
+            </div>
           </div>
 
-          <div className="flex items-center gap-1.5">
-            <select
-              value={periodoMes}
-              onChange={(e) => setPeriodoMes(parseInt(e.target.value))}
-              className="bg-app-bg border-app-border text-[10px] font-black uppercase px-2 py-1.5 h-8"
-            >
-              {meses.map((m, i) => <option key={i} value={i}>{m}</option>)}
-            </select>
-            <select
-              value={periodoAnio}
-              onChange={(e) => setPeriodoAnio(parseInt(e.target.value))}
-              className="bg-app-bg border-app-border text-[10px] font-black uppercase px-2 py-1.5 h-8"
-            >
-              {anios.map(y => <option key={y} value={y}>{y}</option>)}
-            </select>
-          </div>
-
-          <div className="flex items-center gap-2 border-l border-app-border pl-2 ml-1">
+          <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={handleEjecutar}
               disabled={isRunning}
@@ -414,38 +417,46 @@ const SireView: React.FC = () => {
           </div>
         </div>
 
-        {/* Dense Stats Badge Group */}
-        <div className="flex-1 w-full grid grid-cols-2 md:grid-cols-4 gap-2">
-          <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl px-3 py-1.5 flex items-center justify-between">
-            <div className="flex flex-col">
-              <span className="text-[8px] font-black text-emerald-500/80 uppercase">Coinciden</span>
-              <span className="text-sm font-black text-app-text leading-none">{stats.coinciden}</span>
+        {/* Stats Badge Group (Now in its own row, extremely premium!) */}
+        <div className="w-full grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="bg-emerald-500/5 border border-emerald-500/25 rounded-2xl p-3 flex items-center justify-between shadow-sm transition-all hover:scale-[1.01] hover:bg-emerald-500/10">
+            <div className="flex flex-col gap-0.5">
+              <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Coinciden</span>
+              <span className="text-base font-black text-app-text leading-none">{stats.coinciden}</span>
             </div>
-            <CheckCircle2 size={14} className="text-emerald-500/40" />
+            <div className="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 shrink-0">
+              <CheckCircle2 size={14} />
+            </div>
           </div>
           
-          <div className="bg-rose-500/5 border border-rose-500/20 rounded-xl px-3 py-1.5 flex items-center justify-between">
-            <div className="flex flex-col">
-              <span className="text-[8px] font-black text-rose-500/80 uppercase">Discrepancias</span>
-              <span className="text-sm font-black text-app-text leading-none">{stats.discrepancias}</span>
+          <div className="bg-rose-500/5 border border-rose-500/25 rounded-2xl p-3 flex items-center justify-between shadow-sm transition-all hover:scale-[1.01] hover:bg-rose-500/10">
+            <div className="flex flex-col gap-0.5">
+              <span className="text-[9px] font-black text-rose-500 uppercase tracking-widest">Discrepancias</span>
+              <span className="text-base font-black text-app-text leading-none">{stats.discrepancias}</span>
             </div>
-            <AlertCircle size={14} className="text-rose-500/40" />
+            <div className="w-7 h-7 rounded-lg bg-rose-500/10 flex items-center justify-center text-rose-500 shrink-0">
+              <AlertCircle size={14} />
+            </div>
           </div>
 
-          <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl px-3 py-1.5 flex items-center justify-between">
-            <div className="flex flex-col">
-              <span className="text-[8px] font-black text-amber-500/80 uppercase">Solo Sunat</span>
-              <span className="text-sm font-black text-app-text leading-none">{stats.soloSunat}</span>
+          <div className="bg-amber-500/5 border border-amber-500/25 rounded-2xl p-3 flex items-center justify-between shadow-sm transition-all hover:scale-[1.01] hover:bg-amber-500/10">
+            <div className="flex flex-col gap-0.5">
+              <span className="text-[9px] font-black text-amber-500 uppercase tracking-widest">Solo Sunat</span>
+              <span className="text-base font-black text-app-text leading-none">{stats.soloSunat}</span>
             </div>
-            <ArrowRightLeft size={14} className="text-amber-500/40" />
+            <div className="w-7 h-7 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-500 shrink-0">
+              <ArrowRightLeft size={14} />
+            </div>
           </div>
 
-          <div className="bg-blue-500/5 border border-blue-500/20 rounded-xl px-3 py-1.5 flex items-center justify-between">
-            <div className="flex flex-col">
-              <span className="text-[8px] font-black text-blue-500/80 uppercase">Solo Local</span>
-              <span className="text-sm font-black text-app-text leading-none">{stats.soloLocal}</span>
+          <div className="bg-blue-500/5 border border-blue-500/25 rounded-2xl p-3 flex items-center justify-between shadow-sm transition-all hover:scale-[1.01] hover:bg-blue-500/10">
+            <div className="flex flex-col gap-0.5">
+              <span className="text-[9px] font-black text-blue-500 uppercase tracking-widest">Solo Local</span>
+              <span className="text-base font-black text-app-text leading-none">{stats.soloLocal}</span>
             </div>
-            <History size={14} className="text-blue-500/40" />
+            <div className="w-7 h-7 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500 shrink-0">
+              <History size={14} />
+            </div>
           </div>
         </div>
       </div>

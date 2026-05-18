@@ -202,6 +202,14 @@ const App: React.FC = () => {
     return userPayload.role === 'admin' || email === 'aangelo2555@gmail.com' || email.startsWith('admin');
   }, [userPayload]);
 
+  const userName = React.useMemo(() => {
+    return userPayload?.name || 'Usuario Online';
+  }, [userPayload]);
+
+  const userInitial = React.useMemo(() => {
+    return userPayload?.name ? userPayload.name.trim().charAt(0).toUpperCase() : 'U';
+  }, [userPayload]);
+
   if (!isLoggedIn) {
     return <Login />;
   }
@@ -585,10 +593,10 @@ const App: React.FC = () => {
             >
               <div className="text-right hidden sm:block">
                 <p className="text-[11px] font-black uppercase text-app-text leading-tight group-hover:text-red-500 transition-colors">Cerrar Sesión</p>
-                <p className="text-[10px] text-blue-500 font-bold">Usuario Online</p>
+                <p className="text-[10px] text-blue-500 font-bold notranslate" translate="no">{userName}</p>
               </div>
-              <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-md shadow-blue-600/20 text-white font-black text-sm uppercase transition-transform hover:scale-105">
-                U
+              <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-md shadow-blue-600/20 text-white font-black text-sm uppercase transition-transform hover:scale-105 notranslate" translate="no">
+                {userInitial}
               </div>
             </div>
 
