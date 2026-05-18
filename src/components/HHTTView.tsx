@@ -46,36 +46,58 @@ interface HHTTRow {
   const p2 = parseInt(cta.substring(0, 2), 10);
   const types: ('INVENTARIO' | 'NATURALEZA' | 'FUNCION')[] = [];
 
-  // Classes 1–5 → INVENTARIO (Balance General)
-  if (p1 >= 1 && p1 <= 5) types.push('INVENTARIO');
+  // Clases 1–5 → INVENTARIO (Balance General)
+  if (p1 >= 1 && p1 <= 5) {
+    types.push('INVENTARIO');
+  }
 
-  // Class 7 (except 79) → Both NATURALEZA and FUNCION
-  if (p1 === 7 && p2 !== 79) {
+  // Clase 6 (Gastos)
+  if (p1 === 6) {
+    // 69 (Costo de ventas) va ÚNICAMENTE a FUNCION
+    if (p2 === 69) {
+      types.push('FUNCION');
+    }
+    // 66 y 67 (Pérdidas financieras/valor razonable) van a AMBOS (Naturaleza y Función)
+    else if (p2 === 66 || p2 === 67) {
+      types.push('NATURALEZA');
+      types.push('FUNCION');
+    }
+    // Todos los demás gastos de clase 6 van a NATURALEZA
+    else {
+      types.push('NATURALEZA');
+    }
+  }
+
+  // Clase 7 (Ingresos)
+  if (p1 === 7) {
+    // 79 (Cargas imputables) se elimina en ajustes (se clasifica conceptualmente en función)
+    if (p2 === 79) {
+      types.push('FUNCION');
+    }
+    // 71, 72, 78 van ÚNICAMENTE a NATURALEZA (no se presentan en Función)
+    else if (p2 === 71 || p2 === 72 || p2 === 78) {
+      types.push('NATURALEZA');
+    }
+    // Todos los demás ingresos de clase 7 van a AMBOS (Naturaleza y Función)
+    else {
+      types.push('NATURALEZA');
+      types.push('FUNCION');
+    }
+  }
+
+  // Clase 8 (Saldos intermediarios de gestión) → NATURALEZA
+  if (p1 === 8) {
     types.push('NATURALEZA');
+  }
+
+  // Clase 9 (Gastos por Función) → FUNCIÓN
+  if (p1 === 9) {
     types.push('FUNCION');
   }
 
-  // Class 69 (Costo de Ventas) → FUNCIÓN
-  if (p2 === 69) types.push('FUNCION');
-
-  // Class 79 (Cargas imputables a costos y gastos) → Eliminated in adjustments, but belongs to FUNCION conceptual area
-  if (p2 === 79) types.push('FUNCION');
-
-  // Class 6 (except 69) → NATURALEZA
-  if (p1 === 6 && p2 !== 69) types.push('NATURALEZA');
-
-  // Variations (61 / 71) → NATURALEZA
-  if ((p2 === 61 && businessType === 'COMERCIAL') || (p2 === 71 && businessType !== 'COMERCIAL')) {
-    if (!types.includes('NATURALEZA')) types.push('NATURALEZA');
+  if (types.length === 0) {
+    types.push('INVENTARIO');
   }
-
-  // Class 8 (Saldos intermediarios de gestión) → NATURALEZA
-  if (p1 === 8) types.push('NATURALEZA');
-
-  // Class 9 (Costos/Destinos) → FUNCIÓN
-  if (p1 === 9) types.push('FUNCION');
-
-  if (types.length === 0) types.push('INVENTARIO');
   return types;
 }
 

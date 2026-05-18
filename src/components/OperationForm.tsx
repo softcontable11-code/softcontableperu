@@ -334,7 +334,7 @@ const OperationForm: React.FC<OperationFormProps> = ({ mode }) => {
     // --- Record Inventory Movement ---
     if (form.productId && form.quantity > 0) {
       recordInventoryMovement({
-        id: undefined,
+        id: '',
         product_id: form.productId,
         fecha: form.fecha,
         tipo_operacion: mode === 'compra' ? '02' : '01', // 02 Compra, 01 Venta
