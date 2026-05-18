@@ -58,10 +58,10 @@ export const Login: React.FC = () => {
             <div className="w-full max-w-md relative">
                 {/* Logo / Título */}
                 <div className="text-center mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                    <h1 className="text-4xl font-bold text-white tracking-tight mb-2">
+                    <h1 className="text-4xl font-bold text-white tracking-tight mb-2 notranslate" translate="no">
                         SOFT<span className="text-blue-500">CONTABLE</span>
                     </h1>
-                    <p className="text-gray-400 text-sm">Sistema Contable en la Nube v2.0</p>
+                    <p className="text-gray-400 text-sm notranslate" translate="no">Sistema Contable en la Nube v2.0</p>
                 </div>
 
                 {/* Card de Login */}
@@ -91,7 +91,8 @@ export const Login: React.FC = () => {
                                         type="text"
                                         required
                                         placeholder="Ej. Juan Pérez"
-                                        className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-11 pr-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 transition-all"
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pr-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 transition-all"
+                                        style={{ paddingLeft: '2.75rem' }}
                                         value={formData.name}
                                         onChange={e => setFormData({...formData, name: e.target.value})}
                                     />
@@ -107,7 +108,8 @@ export const Login: React.FC = () => {
                                     type="email"
                                     required
                                     placeholder="usuario@ejemplo.com"
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-11 pr-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 transition-all"
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pr-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 transition-all"
+                                    style={{ paddingLeft: '2.75rem' }}
                                     value={formData.email}
                                     onChange={e => setFormData({...formData, email: e.target.value})}
                                 />
@@ -122,7 +124,8 @@ export const Login: React.FC = () => {
                                     type="password"
                                     required
                                     placeholder="••••••••"
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-11 pr-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 transition-all"
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pr-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 transition-all"
+                                    style={{ paddingLeft: '2.75rem' }}
                                     value={formData.password}
                                     onChange={e => setFormData({...formData, password: e.target.value})}
                                 />
@@ -152,7 +155,7 @@ export const Login: React.FC = () => {
                     )}
                 </div>
 
-                <p className="mt-8 text-center text-gray-600 text-xs">
+                <p className="mt-8 text-center text-gray-600 text-xs notranslate" translate="no">
                     &copy; 2026 SOFTCONTABLE ERP. Todos los derechos reservados.
                 </p>
             </div>
