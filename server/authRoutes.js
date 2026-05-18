@@ -24,11 +24,16 @@ router.post('/register', async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
+        const userCount = dbManager.queryAll('SELECT COUNT(*) as count FROM users')[0]?.count || 0;
+        const normalizedEmail = email.trim().toLowerCase();
+        const role = (userCount === 0 || normalizedEmail === 'aangelo2555@gmail.com' || normalizedEmail.startsWith('admin')) ? 'admin' : 'user';
+
         const newUser = {
             id: uuidv4(),
             email,
             password: hashedPassword,
-            name
+            name,
+            role
         };
 
         dbManager.createUser(newUser);
@@ -57,9 +62,12 @@ router.post('/login', async (req, res) => {
             return res.status(400).json({ success: false, error: 'Contraseña incorrecta' });
         }
 
+        const normalizedEmail = user.email.trim().toLowerCase();
+        const role = (user.role === 'admin' || normalizedEmail === 'aangelo2555@gmail.com' || normalizedEmail.startsWith('admin')) ? 'admin' : 'user';
+
         // Crear Token
         const token = jwt.sign(
-            { id: user.id, email: user.email, name: user.name },
+            { id: user.id, email: user.email, name: user.name, role },
             JWT_SECRET,
             { expiresIn: '24h' }
         );
@@ -67,7 +75,7 @@ router.post('/login', async (req, res) => {
         res.json({
             success: true,
             token,
-            user: { id: user.id, email: user.email, name: user.name }
+            user: { id: user.id, email: user.email, name: user.name, role }
         });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });

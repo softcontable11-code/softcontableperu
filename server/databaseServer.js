@@ -286,8 +286,8 @@ try {
 const dbManager = {
     // --- Gestión de Usuarios ---
     createUser: (u) => {
-        const stmt = db.prepare('INSERT INTO users (id, email, password, name) VALUES (?, ?, ?, ?)');
-        return stmt.run(u.id, u.email, u.password, u.name);
+        const stmt = db.prepare('INSERT INTO users (id, email, password, name, role) VALUES (?, ?, ?, ?, ?)');
+        return stmt.run(u.id, u.email, u.password, u.name, u.role || 'user');
     },
 
     getUserByEmail: (email) => {

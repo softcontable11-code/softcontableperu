@@ -186,6 +186,22 @@ const App: React.FC = () => {
   const { activeTab, setActiveTab, theme, toggleTheme, buzonMensajes } = useStore();
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('softcontable_token'));
 
+  const token = localStorage.getItem('softcontable_token');
+  const userPayload = React.useMemo(() => {
+    if (!token) return null;
+    try {
+      return JSON.parse(atob(token.split('.')[1]));
+    } catch {
+      return null;
+    }
+  }, [token]);
+
+  const isAdmin = React.useMemo(() => {
+    if (!userPayload) return false;
+    const email = (userPayload.email || '').trim().toLowerCase();
+    return userPayload.role === 'admin' || email === 'aangelo2555@gmail.com' || email.startsWith('admin');
+  }, [userPayload]);
+
   if (!isLoggedIn) {
     return <Login />;
   }
@@ -537,21 +553,23 @@ const App: React.FC = () => {
             </button>
 
             {/* Backup Button */}
-            <button
-              onClick={handleBackup}
-              disabled={isBackingUp}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all border ${
-                isBackingUp 
-                  ? 'bg-app-bg text-app-muted border-app-border cursor-not-allowed' 
-                  : 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 border-emerald-500/20'
-              }`}
-              title="Crear copia de seguridad"
-            >
-              {isBackingUp ? <Loader2 size={15} className="animate-spin" /> : <Database size={15} />}
-              <span className="text-[10px] font-bold uppercase tracking-wider hidden md:block">
-                {isBackingUp ? 'Procesando...' : 'Backup'}
-              </span>
-            </button>
+            {isAdmin && (
+              <button
+                onClick={handleBackup}
+                disabled={isBackingUp}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all border ${
+                  isBackingUp 
+                    ? 'bg-app-bg text-app-muted border-app-border cursor-not-allowed' 
+                    : 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 border-emerald-500/20'
+                }`}
+                title="Crear copia de seguridad"
+              >
+                {isBackingUp ? <Loader2 size={15} className="animate-spin" /> : <Database size={15} />}
+                <span className="text-[10px] font-bold uppercase tracking-wider hidden md:block">
+                  {isBackingUp ? 'Procesando...' : 'Backup'}
+                </span>
+              </button>
+            )}
 
             <div className="w-px h-8 bg-app-border hidden sm:block" />
 

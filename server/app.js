@@ -90,6 +90,11 @@ app.post('/api/db/execute', async (req, res) => {
 
 app.post('/api/db/backup', async (req, res) => {
     try {
+        const normalizedEmail = (req.user?.email || '').trim().toLowerCase();
+        const isAdmin = req.user?.role === 'admin' || normalizedEmail === 'aangelo2555@gmail.com' || normalizedEmail.startsWith('admin');
+        if (!isAdmin) {
+            return res.status(403).json({ success: false, error: 'Acceso denegado. Se requieren privilegios de Administrador para descargar la base de datos completa.' });
+        }
         const backupPath = await db.backup();
         res.download(backupPath);
     } catch (error) {

@@ -56,8 +56,17 @@ export const webApiBridge = {
         return res.data;
     },
     dbBackup: async () => {
-        const res = await api.post('/api/db/backup');
-        return res.data;
+        const res = await api.post('/api/db/backup', {}, { responseType: 'blob' });
+        const blob = new Blob([res.data], { type: 'application/octet-stream' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `backup_softcontable_${Date.now()}.db`);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+        return "Carpeta de Descargas";
     },
     dbClearWorkspace: async (ruc: string) => {
         const res = await api.post(`/api/db/clear-workspace/${ruc}`);
