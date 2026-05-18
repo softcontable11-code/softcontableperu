@@ -78,8 +78,35 @@ app.delete(['/api/db/workspace/:ruc', '/api/db/workspaces/:ruc'], async (req, re
 
 app.post('/api/db/execute', async (req, res) => {
     try {
-        const { sql, params } = req.body;
-        // Agregamos el user_id a los parámetros si la consulta lo requiere
+        let { sql, params } = req.body;
+        
+        // ─── REESCRITURA AUTOMÁTICA DE SQL PARA SAAS (INYECCIÓN DE USER_ID) ───
+        const insertMatch = sql.match(/INSERT\s+(?:OR\s+\w+\s+)?INTO\s+(\w+)/i);
+        if (insertMatch && req.user && req.user.id) {
+            const tableName = insertMatch[1];
+            try {
+                const cols = db.queryAll(`PRAGMA table_info(${tableName})`);
+                const hasUserId = cols.some(c => c.name === 'user_id');
+                if (hasUserId && !sql.toLowerCase().includes('user_id')) {
+                    const colParenCloseIndex = sql.indexOf(')');
+                    const valuesIndex = sql.toUpperCase().indexOf('VALUES');
+                    const valParenCloseIndex = sql.lastIndexOf(')');
+                    
+                    if (colParenCloseIndex !== -1 && valuesIndex !== -1 && valParenCloseIndex !== -1) {
+                        const beforeCols = sql.slice(0, colParenCloseIndex);
+                        const afterCols = sql.slice(colParenCloseIndex, valParenCloseIndex);
+                        const endStr = sql.slice(valParenCloseIndex);
+                        
+                        sql = `${beforeCols}, user_id${afterCols}, ?${endStr}`;
+                        params.push(req.user.id);
+                        console.log(`[SAAS DB REWRITE] Inyectado user_id en la tabla ${tableName}`);
+                    }
+                }
+            } catch (err) {
+                console.error('[REWRITE ERROR] Error inyectando user_id:', err.message);
+            }
+        }
+
         const result = await db.run(sql, params);
         res.json({ success: true, result });
     } catch (error) {

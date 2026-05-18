@@ -19,6 +19,16 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
+// Interceptor de respuesta para depurar y notificar errores de base de datos
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        const serverError = error.response?.data?.error || error.response?.data?.message || error.message;
+        console.error('❌ [API BRIDGE ERROR]:', serverError);
+        return Promise.reject(error);
+    }
+);
+
 export const webApiBridge = {
     // --- Auth API ---
     authLogin: async (credentials: any) => {
