@@ -250,20 +250,112 @@ db.exec(`
 `);
 
 // Función auxiliar para añadir columnas si no existen (para migración de tablas existentes)
-function addUserIdColumn(tableName) {
+function ensureColumnExists(tableName, colName, colType) {
     try {
         const info = db.prepare(`PRAGMA table_info(${tableName})`).all();
-        if (!info.some(col => col.name === 'user_id')) {
-            db.exec(`ALTER TABLE ${tableName} ADD COLUMN user_id TEXT`);
-            console.log(`Columna user_id añadida a ${tableName}`);
+        if (!info.some(col => col.name === colName)) {
+            db.exec(`ALTER TABLE ${tableName} ADD COLUMN ${colName} ${colType}`);
+            console.log(`[MIGRATION] Columna ${colName} añadida a la tabla ${tableName}`);
         }
     } catch (e) {
-        console.error(`Error al verificar/añadir user_id a ${tableName}:`, e.message);
+        console.error(`[MIGRATION ERROR] Error al verificar/añadir ${colName} a ${tableName}:`, e.message);
     }
 }
 
 // Asegurar user_id en todas las tablas por si acaso
-['workspaces', 'purchases', 'sales', 'journal', 'entities', 'asientos', 'products', 'inventory_movements', 'cash_movements', 'fixed_assets', 'employees', 'balance_inicial', 'maintenance', 'costs', 'honorarios', 'movimientos_data'].forEach(addUserIdColumn);
+['workspaces', 'purchases', 'sales', 'journal', 'entities', 'asientos', 'products', 'inventory_movements', 'cash_movements', 'fixed_assets', 'employees', 'balance_inicial', 'maintenance', 'costs', 'honorarios', 'movimientos_data'].forEach(tbl => ensureColumnExists(tbl, 'user_id', 'TEXT'));
+
+// Migraciones generales para sincronizar la base de datos de Railway con todos los campos del sistema local
+ensureColumnExists('workspaces', 'businessType', "TEXT DEFAULT 'COMERCIAL'");
+
+ensureColumnExists('products', 'type_existence', 'TEXT');
+ensureColumnExists('products', 'sale_price', 'REAL DEFAULT 0');
+
+const sireColsDef = [
+    { name: 'tipOper', type: 'TEXT' },
+    { name: 'tipOperCode', type: 'TEXT' },
+    { name: 'ctaGasto', type: 'TEXT' },
+    { name: 'ctaAbono', type: 'TEXT' },
+    { name: 'moneda', type: 'TEXT' },
+    { name: 'detraccion', type: 'REAL' },
+    { name: 'car', type: 'TEXT' },
+    { name: 'estado_sire', type: "TEXT DEFAULT 'Local'" },
+    { name: 'icbper', type: 'REAL DEFAULT 0' },
+    { name: 'isc', type: 'REAL DEFAULT 0' },
+    { name: 'otros_tributos', type: 'REAL DEFAULT 0' },
+    { name: 'id_referencia', type: 'TEXT' },
+    { name: 'cuo', type: 'TEXT' },
+    { name: 'hash_sire', type: 'TEXT' }
+];
+sireColsDef.forEach(c => ensureColumnExists('purchases', c.name, c.type));
+
+const sireSalesColsDef = [
+    { name: 'tipOper', type: 'TEXT' },
+    { name: 'tipOperCode', type: 'TEXT' },
+    { name: 'ctaCargo', type: 'TEXT' },
+    { name: 'ctaIngreso', type: 'TEXT' },
+    { name: 'moneda', type: 'TEXT' },
+    { name: 'detraccion', type: 'REAL' },
+    { name: 'car', type: 'TEXT' },
+    { name: 'estado_sire', type: "TEXT DEFAULT 'Local'" },
+    { name: 'icbper', type: 'REAL DEFAULT 0' },
+    { name: 'isc', type: 'REAL DEFAULT 0' },
+    { name: 'otros_tributos', type: 'REAL DEFAULT 0' },
+    { name: 'id_referencia', type: 'TEXT' },
+    { name: 'cuo', type: 'TEXT' },
+    { name: 'hash_sire', type: 'TEXT' }
+];
+sireSalesColsDef.forEach(c => ensureColumnExists('sales', c.name, c.type));
+
+const fixedAssetsColsDef = [
+    { name: 'marca', type: 'TEXT' },
+    { name: 'modelo', type: 'TEXT' },
+    { name: 'serie_placa', type: 'TEXT' },
+    { name: 'saldo_inicial', type: 'REAL DEFAULT 0' },
+    { name: 'adquisiciones', type: 'REAL DEFAULT 0' },
+    { name: 'mejoras', type: 'REAL DEFAULT 0' },
+    { name: 'retiros_bajas', type: 'REAL DEFAULT 0' },
+    { name: 'otros_ajustes', type: 'REAL DEFAULT 0' },
+    { name: 'ajuste_inflacion', type: 'REAL DEFAULT 0' },
+    { name: 'deprec_ejercicio', type: 'REAL DEFAULT 0' },
+    { name: 'deprec_bajas', type: 'REAL DEFAULT 0' },
+    { name: 'deprec_otros', type: 'REAL DEFAULT 0' },
+    { name: 'deprec_acum_anterior', type: 'REAL DEFAULT 0' }
+];
+fixedAssetsColsDef.forEach(c => ensureColumnExists('fixed_assets', c.name, c.type));
+
+const employeesColsDef = [
+    { name: 'doc_num', type: 'TEXT' },
+    { name: 'cargo', type: 'TEXT' },
+    { name: 'sueldo', type: 'REAL' },
+    { name: 'fecha_ingreso', type: 'TEXT' },
+    { name: 'afp', type: 'TEXT' },
+    { name: 'cuspp', type: 'TEXT' },
+    { name: 'comision_tipo', type: 'TEXT' },
+    { name: 'eps', type: 'INTEGER DEFAULT 0' },
+    { name: 'sctr', type: 'INTEGER DEFAULT 0' }
+];
+employeesColsDef.forEach(c => ensureColumnExists('employees', c.name, c.type));
+
+const inventoryMovementsColsDef = [
+    { name: 'fecha', type: 'TEXT' },
+    { name: 'tipo_mov', type: 'TEXT' },
+    { name: 'cantidad', type: 'REAL' },
+    { name: 'costo_unitario', type: 'REAL' },
+    { name: 'costo_total', type: 'REAL' },
+    { name: 'glosa', type: 'TEXT' },
+    { name: 'reference_id', type: 'TEXT' }
+];
+inventoryMovementsColsDef.forEach(c => ensureColumnExists('inventory_movements', c.name, c.type));
+
+const cashMovementsColsDef = [
+    { name: 'fecha', type: 'TEXT' },
+    { name: 'tipo', type: 'TEXT' },
+    { name: 'glosa', type: 'TEXT' },
+    { name: 'monto', type: 'REAL' },
+    { name: 'cta', type: 'TEXT' }
+];
+cashMovementsColsDef.forEach(c => ensureColumnExists('cash_movements', c.name, c.type));
 
 // --- Migración Forzada: Crear balance_inicial si no existe ---
 try {
