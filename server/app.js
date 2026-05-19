@@ -338,6 +338,108 @@ app.post('/api/sire/generar-archivo', async (req, res) => {
     }
 });
 
+app.get('/api/sire/archivos', async (req, res) => {
+    try {
+        const outputDir = path.join(process.cwd(), 'SIRE SUNAT');
+        if (!fs.existsSync(outputDir)) {
+            return res.json({ archivos: [] });
+        }
+        
+        let allFiles = [];
+        const walk = (dir) => {
+            if (!fs.existsSync(dir)) return;
+            const files = fs.readdirSync(dir);
+            files.forEach(file => {
+                const fullPath = path.join(dir, file);
+                if (fs.statSync(fullPath).isDirectory()) {
+                    walk(fullPath);
+                } else if (file.endsWith('.xlsx') || file.endsWith('.zip') || file.endsWith('.txt')) {
+                    const stats = fs.statSync(fullPath);
+                    allFiles.push({
+                        nombre: file,
+                        fecha: stats.mtime.toLocaleString('es-PE'),
+                        fullPath: fullPath,
+                        size: stats.size
+                    });
+                }
+            });
+        };
+        
+        walk(outputDir);
+        res.json({ archivos: allFiles.sort((a, b) => b.fecha.localeCompare(a.fecha)) });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.delete('/api/sire/archivos/:nombre', async (req, res) => {
+    try {
+        const nombre = req.params.nombre;
+        const outputDir = path.join(process.cwd(), 'SIRE SUNAT');
+        
+        const findFile = (dir, target) => {
+            if (!fs.existsSync(dir)) return null;
+            const files = fs.readdirSync(dir);
+            for (const file of files) {
+                const fullPath = path.join(dir, file);
+                if (fs.statSync(fullPath).isDirectory()) {
+                    const found = findFile(fullPath, target);
+                    if (found) return found;
+                } else if (file === target) {
+                    return fullPath;
+                }
+            }
+            return null;
+        };
+
+        const filePath = findFile(outputDir, nombre);
+        if (filePath) {
+            fs.unlinkSync(filePath);
+            if (nombre.endsWith('.txt')) {
+                const zipPath = filePath.replace('.txt', '.zip');
+                if (fs.existsSync(zipPath)) {
+                    fs.unlinkSync(zipPath);
+                }
+            }
+            return res.json({ success: true });
+        }
+        res.status(404).json({ success: false, error: 'Archivo no encontrado' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.get('/api/sire/archivos/:nombre/descargar', async (req, res) => {
+    try {
+        const nombre = req.params.nombre;
+        const outputDir = path.join(process.cwd(), 'SIRE SUNAT');
+        
+        const findFile = (dir, target) => {
+            if (!fs.existsSync(dir)) return null;
+            const files = fs.readdirSync(dir);
+            for (const file of files) {
+                const fullPath = path.join(dir, file);
+                if (fs.statSync(fullPath).isDirectory()) {
+                    const found = findFile(fullPath, target);
+                    if (found) return found;
+                } else if (file === target) {
+                    return fullPath;
+                }
+            }
+            return null;
+        };
+
+        const filePath = findFile(outputDir, nombre);
+        if (filePath) {
+            res.download(filePath, nombre);
+        } else {
+            res.status(404).json({ success: false, error: 'Archivo no encontrado' });
+        }
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // --- Static Files & SPA Routing ---
 
 const distPath = path.join(__dirname, '../dist');

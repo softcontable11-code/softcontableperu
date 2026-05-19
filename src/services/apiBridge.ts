@@ -134,6 +134,54 @@ export const webApiBridge = {
         const res = await api.post('/api/sire/generar-archivo', args);
         return res.data;
     },
+    listarArchivosSire: async () => {
+        const res = await api.get('/api/sire/archivos');
+        return res.data.archivos || [];
+    },
+    eliminarArchivoSire: async (nombre: string) => {
+        const res = await api.delete(`/api/sire/archivos/${encodeURIComponent(nombre)}`);
+        return res.data;
+    },
+    abrirArchivoSire: async (nombre: string) => {
+        const res = await api.get(`/api/sire/archivos/${encodeURIComponent(nombre)}/descargar`, { responseType: 'blob' });
+        const blob = new Blob([res.data]);
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', nombre);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+        return { success: true };
+    },
+    sireImportarTxt: async () => {
+        return new Promise((resolve) => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.txt,.csv';
+            input.onchange = (e: any) => {
+                const file = e.target.files[0];
+                if (!file) {
+                    resolve({ success: false, error: 'No se seleccionó ningún archivo' });
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    resolve({
+                        success: true,
+                        content: ev.target?.result,
+                        filename: file.name
+                    });
+                };
+                reader.onerror = () => {
+                    resolve({ success: false, error: 'Error al leer el archivo' });
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        });
+    },
 
     // --- Window Control (No-ops en Web) ---
     winMinimize: () => {},
