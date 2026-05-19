@@ -137,9 +137,21 @@ class BuzonHandler {
       await page.goto(portalUrl, { waitUntil: 'domcontentloaded' });
 
       await page.waitForSelector('#txtRuc');
-      await page.fill('#txtRuc', ruc);
-      await page.fill('#txtUsuario', usuario);
-      await page.fill('#txtContrasena', clave);
+      
+      // Rellenado robusto con verificación y reintentos (evita que scripts de la página SUNAT limpien los campos al terminar de cargar)
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        await page.fill('#txtRuc', ruc);
+        await page.fill('#txtUsuario', usuario);
+        await page.fill('#txtContrasena', clave);
+        await page.waitForTimeout(500);
+        
+        const filledRuc = await page.inputValue('#txtRuc').catch(() => '');
+        const filledUser = await page.inputValue('#txtUsuario').catch(() => '');
+        if (filledRuc === ruc && filledUser === usuario) {
+          break;
+        }
+        logger.info(`[SCRAPER] Campos vacíos o limpiados por SUNAT. Reintento de llenado ${attempt}/3...`);
+      }
 
       await Promise.all([
         page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 60000 }).catch(() => { }),
