@@ -177,9 +177,17 @@ app.delete('/api/db/balance-inicial/:ruc/:id', async (req, res) => {
 
 app.post('/api/buzon/consultar', async (req, res) => {
     try {
+        console.log('[BUZON API] Petición de consulta recibida:', {
+            ruc: req.body?.ruc,
+            usuario: req.body?.usuario,
+            hasClave: !!req.body?.clave,
+            claveLength: req.body?.clave ? req.body.clave.length : 0,
+            empresa: req.body?.empresa
+        });
         const result = await buzonHandler.consultarBuzon(req.body);
         res.json(result);
     } catch (error) {
+        console.error('[BUZON API ERROR]:', error.message);
         res.status(500).json({ error: error.message });
     }
 });
@@ -197,9 +205,20 @@ app.post('/api/buzon/descargar-adjunto', async (req, res) => {
 
 app.post('/api/sire/ejecutar', async (req, res) => {
     try {
+        console.log('[SIRE API] Petición de ejecución recibida:', {
+            ruc: req.body?.ruc,
+            proceso: req.body?.proceso,
+            periodoInicio: req.body?.periodoInicio,
+            hasCredentials: !!req.body?.credentials,
+            usuario_sol: req.body?.credentials?.usuario_sol,
+            hasClaveSol: !!req.body?.credentials?.clave_sol,
+            clientId: req.body?.credentials?.client_id,
+            hasClientSecret: !!req.body?.credentials?.client_secret
+        });
         const result = await sireHandler.ejecutarSire({ ...req.body, userId: req.user.id });
         res.json(result);
     } catch (error) {
+        console.error('[SIRE API ERROR]:', error.message);
         res.status(500).json({ error: error.message });
     }
 });
