@@ -91,6 +91,15 @@ const BuzonView: React.FC = () => {
             th, td { border: 1px solid #e2e8f0; padding: 0.75rem; text-align: left; }
             th { background-color: #f7fafc; font-weight: 700; }
             .inlined-iframe-content { margin-top: 1rem; }
+            /* Estilizar los iframes embebidos de SUNAT para ocupar todo el ancho y alto visible */
+            iframe {
+              width: 100% !important;
+              height: 680px !important;
+              border: 1px solid #e2e8f0 !important;
+              border-radius: 8px !important;
+              margin-top: 10px !important;
+              box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
+            }
             /* Scrollbar estilizada para el iframe body si fuera necesario */
             ::-webkit-scrollbar { width: 8px; }
             ::-webkit-scrollbar-track { background: #f1f5f9; }
@@ -102,6 +111,11 @@ const BuzonView: React.FC = () => {
             ${content}
           </div>
           <script>
+            // Definir dummy para evitar errores de referencia por parte de los scripts inline de SUNAT en iframes anidados
+            window.disableContextMenu = function() {
+              console.log("[SOFTCONTABLE] Evento disableContextMenu gestionado.");
+            };
+
             document.addEventListener('click', (e) => {
               const target = e.target.closest('a');
               if (target && target.getAttribute('href')) {
