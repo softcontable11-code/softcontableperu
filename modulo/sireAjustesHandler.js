@@ -1692,15 +1692,18 @@ class SireAjustesHandler {
       const datosComprobante = [];
       const datosCliente = [];
 
+      const isRVIE = nombreHoja.startsWith('RVIE');
+      const startRow = isRVIE ? 7 : (config.filaInicio - 1);
+
       // Leer datos desde la fila de inicio hasta la última fila con datos
-      for (let row = config.filaInicio - 1; row <= range.e.r; row++) {
+      for (let row = startRow; row <= range.e.r; row++) {
         // Verificar si la fila tiene datos (columna B no vacía)
         const cellB = sheet[XLSX.utils.encode_cell({ r: row, c: 1 })];
         if (!cellB || !cellB.v) continue;
 
         // Leer datos del generador (columnas principales)
         const datosRow = {
-          id: this.getCellValue(sheet, XLSX.utils.encode_cell({ r: row, c: 1 })) || row - config.filaInicio + 2,
+          id: this.getCellValue(sheet, XLSX.utils.encode_cell({ r: row, c: 1 })) || row - startRow + 1,
           ruc: this.getCellValue(sheet, XLSX.utils.encode_cell({ r: row, c: 2 })) || '',
           razonSocial: this.getCellValue(sheet, XLSX.utils.encode_cell({ r: row, c: 3 })) || '',
           periodo: this.getCellValue(sheet, XLSX.utils.encode_cell({ r: row, c: 4 })) || '',
@@ -1712,9 +1715,9 @@ class SireAjustesHandler {
           tipoDocCliente: this.getCellValue(sheet, XLSX.utils.encode_cell({ r: row, c: 10 })) || '',
           rucCliente: this.getCellValue(sheet, XLSX.utils.encode_cell({ r: row, c: 11 })) || '',
           razonSocialCliente: this.getCellValue(sheet, XLSX.utils.encode_cell({ r: row, c: 12 })) || '',
-          baseImponible: this.getCellValue(sheet, XLSX.utils.encode_cell({ r: row, c: 13 })) || '',
-          igv: this.getCellValue(sheet, XLSX.utils.encode_cell({ r: row, c: 14 })) || '',
-          total: this.getCellValue(sheet, XLSX.utils.encode_cell({ r: row, c: 15 })) || ''
+          baseImponible: this.getCellValue(sheet, XLSX.utils.encode_cell({ r: row, c: isRVIE ? 14 : 13 })) || '',
+          igv: this.getCellValue(sheet, XLSX.utils.encode_cell({ r: row, c: isRVIE ? 16 : 14 })) || '',
+          total: this.getCellValue(sheet, XLSX.utils.encode_cell({ r: row, c: isRVIE ? 25 : 15 })) || ''
         };
 
         if (datosRow.ruc || datosRow.razonSocial) {

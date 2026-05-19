@@ -349,7 +349,7 @@ const SireView: React.FC = () => {
     try {
       const result = await electron.sireImportarTxt();
       if (!result.success) { toast.error(result.error, { id: loadingToast }); return; }
-      const parsed = parseSireTxt(result.content);
+      const parsed = parseSireTxt(result.content, proceso === 'Generar RVIE');
       toast.success(`Parseados ${parsed.validRecords} registros de ${result.filename} (${parsed.errorRecords} con errores)`, { id: loadingToast });
       
       const erpRecords = proceso === 'Generar RCE' ? purchases : sales;

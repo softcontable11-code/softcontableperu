@@ -348,6 +348,7 @@ export interface WorkspaceState {
 // ─── App Global State ───
 export interface AppState extends WorkspaceState {
   activeTab: string;
+  showCompanyConfig: boolean;
   isProcessing: boolean;
   theme: 'light' | 'dark';
   workspaces: CompanyData[];
@@ -364,6 +365,7 @@ export interface AppState extends WorkspaceState {
   
   // --- App Settings ---
   setActiveTab: (tab: string) => void;
+  setShowCompanyConfig: (show: boolean) => void;
   toggleTheme: () => void;
   
   // --- Data Actions ---
@@ -556,12 +558,13 @@ export const useStore = create<AppState>()(
     (set, get) => ({
       ...EMPTY_WORKSPACE,
       activeTab: 'EMPRESA',
+      showCompanyConfig: false,
       isProcessing: false,
       theme: 'dark',
       workspaces: [],
       buzonMensajes: [],
       draftCompra: null, draftVenta: null, draftHonorario: null, draftAsiento: null,
-
+      
       // --- Lifecycle ---
       initApp: async () => {
         try {
@@ -624,6 +627,7 @@ export const useStore = create<AppState>()(
 
       // --- UI Settings ---
       setActiveTab: (tab) => set({ activeTab: tab }),
+      setShowCompanyConfig: (show) => set({ showCompanyConfig: show }),
       toggleTheme: () => set((s) => ({ theme: s.theme === 'light' ? 'dark' : 'light' })),
 
       // --- Data Persistence (Proxy to DB) ---

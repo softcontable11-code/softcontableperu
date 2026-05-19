@@ -46,7 +46,7 @@ const BATCH_SIZE = sireConfig.sire_ingestion_pipeline.batch_processing_size;
  * @param content Contenido completo del archivo TXT
  * @returns Resultado del parseo con registros y errores
  */
-export function parseSireTxt(content: string): SireParseResult {
+export function parseSireTxt(content: string, isRvie: boolean = false): SireParseResult {
   const lines = content.split('\n').filter(l => l.trim().length > 0);
   const records: SireRecord[] = [];
   const errors: { line: number; message: string }[] = [];
@@ -61,8 +61,9 @@ export function parseSireTxt(content: string): SireParseResult {
     const fields = line.split(DELIMITER);
 
     // Mínimo de campos esperados
-    if (fields.length < 25) {
-      errors.push({ line: lineNumber, message: `Campos insuficientes: ${fields.length}/25+` });
+    const minFields = isRvie ? 26 : 25;
+    if (fields.length < minFields) {
+      errors.push({ line: lineNumber, message: `Campos insuficientes: ${fields.length}/${minFields}+` });
       continue;
     }
 
@@ -89,9 +90,9 @@ export function parseSireTxt(content: string): SireParseResult {
     }
 
     // ─── Parsear campos monetarios ───
-    const bi = parseDecimal(fields[13]);
-    const igv = parseDecimal(fields[15]);
-    const total = parseDecimal(fields[23]);
+    const bi = parseDecimal(fields[isRvie ? 14 : 13]);
+    const igv = parseDecimal(fields[isRvie ? 16 : 15]);
+    const total = parseDecimal(fields[isRvie ? 25 : 23]);
 
     records.push({
       ruc_emisor: ruc,

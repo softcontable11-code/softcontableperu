@@ -183,8 +183,19 @@ function findGroupForTab(tabId: string): string | null {
 // ─── App Component ───
 
 const App: React.FC = () => {
-  const { activeTab, setActiveTab, theme, toggleTheme, buzonMensajes } = useStore();
+  const { activeTab, setActiveTab, theme, toggleTheme, buzonMensajes, setShowCompanyConfig } = useStore();
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('softcontable_token'));
+
+  const handleOpenCompanyConfig = () => {
+    setActiveTab('EMPRESA');
+    setShowCompanyConfig(true);
+    setTimeout(() => {
+      const element = document.getElementById('company-config-section');
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 100);
+  };
 
   const token = localStorage.getItem('softcontable_token');
   const userPayload = React.useMemo(() => {
@@ -536,12 +547,12 @@ const App: React.FC = () => {
               )}
             </div>
             <button
-              onClick={() => setActiveTab('EMPRESA')}
-              className="h-9 px-4 bg-app-bg hover:bg-blue-50 dark:hover:bg-blue-600/10 border border-app-border rounded-xl text-app-text hover:text-blue-600 dark:hover:text-blue-400 font-bold transition-all flex items-center gap-2 text-[10px] uppercase tracking-widest shadow-sm"
+              onClick={handleOpenCompanyConfig}
+              className="group h-9 w-9 hover:w-56 px-0 hover:px-4 bg-app-bg hover:bg-blue-50 dark:hover:bg-blue-600/10 border border-app-border rounded-xl text-app-text hover:text-blue-600 dark:hover:text-blue-400 font-bold transition-all duration-300 flex items-center justify-center hover:justify-start gap-2 text-[10px] uppercase tracking-widest shadow-sm overflow-hidden whitespace-nowrap"
               title="Configuración de la Empresa"
             >
-              <Building2 size={14} className="text-blue-600 dark:text-blue-400" />
-              <span>Configuración de la Empresa</span>
+              <Building2 size={14} className="text-blue-600 dark:text-blue-400 shrink-0" />
+              <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">Configuración de la Empresa</span>
             </button>
           </div>
 

@@ -14,11 +14,10 @@ import * as apiService from '../services/apiService';
 const formatCurrency = (n: number) => `S/ ${Math.abs(n).toLocaleString('es-PE', { minimumFractionDigits: 2 })}`;
 
 const EmpresaView: React.FC = () => {
-  const { currentCompany: _currentCompany, updateCompany, sales, purchases, honorarios, journal, asientos, entities, setActiveTab } = useStore();
+  const { currentCompany: _currentCompany, updateCompany, sales, purchases, honorarios, journal, asientos, entities, setActiveTab, showCompanyConfig: showConfig, setShowCompanyConfig: setShowConfig } = useStore();
   const currentCompany = _currentCompany || {};
   const [isSearchingRuc, setIsSearchingRuc] = useState(false);
   const [fetchSuccess, setFetchSuccess] = useState(false);
-  const [showConfig, setShowConfig] = useState(false);
   const [supportLinkDraft, setSupportLinkDraft] = useState('');
   const [isSupportSaved, setIsSupportSaved] = useState(!!currentCompany.support);
 
@@ -35,12 +34,16 @@ const EmpresaView: React.FC = () => {
 
   // Recent activity (last 8 operations)
   const recentOps = useMemo(() => {
-    const ops: { type: string; label: string; amount: number; date: string; icon: typeof Tag }[] = [];
-    localSales.slice(-4).forEach(s => ops.push({ type: 'venta', label: `${s.serie}-${s.numero}`, amount: s.total, date: s.fecha, icon: Tag }));
-    localPurchases.slice(-4).forEach(p => ops.push({ type: 'compra', label: `${p.serie}-${p.numero}`, amount: p.total, date: p.fecha, icon: ShoppingCart }));
-    honorarios.slice(-2).forEach(h => ops.push({ type: 'honorario', label: `${h.serie}-${h.numero}`, amount: h.total, date: h.fecha, icon: ReceiptText }));
+    const ops: { type: string; label: string; amount: number; date: string; icon: any }[] = [];
+    localSales.slice(-4).forEach(s => ops.push({ type: 'venta', label: s.glosa || `Venta ${s.serie}-${s.numero}`, amount: s.total, date: s.fecha, icon: Tag }));
+    localPurchases.slice(-4).forEach(p => ops.push({ type: 'compra', label: p.glosa || `Compra ${p.serie}-${p.numero}`, amount: p.total, date: p.fecha, icon: ShoppingCart }));
+    honorarios.slice(-2).forEach(h => ops.push({ type: 'honorario', label: h.nombre || `Honorario ${h.serie}-${h.numero}`, amount: h.total, date: h.fecha, icon: ReceiptText }));
+    asientos.slice(-4).forEach(a => {
+      const amount = a.lines?.reduce((sum, line) => sum + (line.debe || 0), 0) || 0;
+      ops.push({ type: 'asiento', label: a.header?.glosa || 'Asiento Manual', amount, date: a.header?.fecEmi || '', icon: BookText });
+    });
     return ops.sort((a, b) => (b.date || '').localeCompare(a.date || '')).slice(0, 6);
-  }, [localSales, localPurchases, honorarios]);
+  }, [localSales, localPurchases, honorarios, asientos]);
 
   const handleRucChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, '').slice(0, 11);
@@ -178,7 +181,7 @@ const EmpresaView: React.FC = () => {
               <Clock size={14} className="text-pld-blue" />
               Últimas Operaciones
             </h3>
-            <span className="text-[10px] text-app-muted">{localSales.length + localPurchases.length + honorarios.length} total</span>
+            <span className="text-[10px] text-app-muted">{localSales.length + localPurchases.length + honorarios.length + asientos.length} total</span>
           </div>
           {recentOps.length > 0 ? (
             <div className="divide-y divide-app-border/50">
@@ -187,7 +190,8 @@ const EmpresaView: React.FC = () => {
                   <div className={`p-2 rounded-lg shrink-0 ${
                     op.type === 'venta' ? 'bg-emerald-500/10 text-emerald-500' :
                     op.type === 'compra' ? 'bg-violet-500/10 text-violet-500' :
-                    'bg-amber-500/10 text-amber-500'
+                    op.type === 'honorario' ? 'bg-amber-500/10 text-amber-500' :
+                    'bg-blue-500/10 text-blue-500'
                   }`}>
                     <op.icon size={14} />
                   </div>
@@ -245,7 +249,7 @@ const EmpresaView: React.FC = () => {
       </div>
 
       {/* ═══ COMPANY CONFIGURATION (Collapsible) ═══ */}
-      <div>
+      <div id="company-config-section" className="scroll-mt-6">
         <button
           onClick={() => setShowConfig(!showConfig)}
           className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-app-muted hover:text-pld-blue transition-colors mb-3"
