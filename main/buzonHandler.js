@@ -412,7 +412,8 @@ class BuzonHandler {
 
          // --- LIMPIEZA ADICIONAL: REMOVER SCRIPTS ---
          // Esto evita que posibles scripts de SUNAT redirijan el iframe al menú principal
-         const cleanHtml = html.replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gim, '<!-- Script removed -->');
+         const realContent = contentEl.querySelector('.msj-detalle, #idCuerpoMensaje, table.presentacion, .contenedor-correo-cuerpo');
+         const cleanHtml = (realContent ? realContent.innerHTML : html).replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gim, '<!-- Script removed -->');
 
          // Capturar anexos del panel
          const anexos = [];
@@ -432,7 +433,7 @@ class BuzonHandler {
          return {
             asunto: title,
             fecha: date,
-            contenidoHtml: contentEl ? contentEl.innerHTML : '',
+            contenidoHtml: cleanHtml,
             anexos
          };
       });
@@ -443,7 +444,22 @@ class BuzonHandler {
       if (contenido.includes('<iframe')) {
          try {
             logger.info(`[SCRAPER] Detectado iframe en DOM. Accediendo al marco interno...`);
-            const docFrame = page.frames().find(f => f.name() === 'contenedorMensaje');
+            let docFrame = null;
+            
+            // Método 1: Obtener el contentFrame del elemento iframe encontrado en el panel
+            const iframeHandle = await frame.$('.contenedor-correo iframe, #detallePanel iframe, iframe[name="contenedorMensaje"]');
+            if (iframeHandle) {
+               docFrame = await iframeHandle.contentFrame();
+            }
+            
+            // Método 2: Fallback buscando por nombre/url del frame
+            if (!docFrame) {
+               docFrame = page.frames().find(f => 
+                  f.name() === 'contenedorMensaje' || 
+                  f.url().includes('verHtmlMensaje') ||
+                  f.url().includes('visor')
+                );
+            }
             
             if (docFrame) {
                await docFrame.waitForSelector('body', { timeout: 8000 }).catch(() => {});
@@ -456,8 +472,10 @@ class BuzonHandler {
                    // Si encontramos el documento real dentro del iframe, REEMPLAZAMOS todo el contenido basura externo
                    // con solo el cuerpo del documento para evitar el "efecto comprimido" y el ruido del menú.
                    contenido = fullHtml;
-                   logger.info(`[SCRAPER] Documento principal de SUNAT extraído y aislado con éxito.`);
+                   logger.info(`[SCRAPER] Documento principal de SUNAT extraído y aislado con éxito del iframe.`);
                 }
+            } else {
+               logger.warn(`[SCRAPER] No se pudo encontrar el frame interno para extraer el contenido del mensaje.`);
             }
          } catch (err) {
             logger.error(`[SCRAPER] Error al procesar frame interno: ${err.message}`);
