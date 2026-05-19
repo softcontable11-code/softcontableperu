@@ -132,11 +132,12 @@ class BuzonHandler {
       page.setDefaultTimeout(30000);
       page.setDefaultNavigationTimeout(90000);
 
-      const portalUrl = config.PORTALES[3]; // Portal Buzón Directo
+       const portalUrl = config.PORTALES[3]; // Portal Buzón Directo
       logger.info('Navegando al portal v3.0...', { url: portalUrl });
-      await page.goto(portalUrl, { waitUntil: 'domcontentloaded' });
+      await page.goto(portalUrl, { waitUntil: 'load', timeout: 90000 }).catch(() => {});
 
       await page.waitForSelector('#txtRuc');
+      await page.waitForTimeout(1500); // Dar tiempo a que terminen los scripts onload de la página
       
       // Rellenado robusto con verificación y reintentos (evita que scripts de la página SUNAT limpien los campos al terminar de cargar)
       for (let attempt = 1; attempt <= 3; attempt++) {
@@ -154,7 +155,7 @@ class BuzonHandler {
       }
 
       await Promise.all([
-        page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 60000 }).catch(() => { }),
+        page.waitForNavigation({ waitUntil: 'load', timeout: 60000 }).catch(() => { }),
         page.click('#btnAceptar')
       ]);
 
@@ -210,6 +211,26 @@ class BuzonHandler {
       }
 
       await this.manejarIntersticiales(page);
+
+      // --- VERIFICACIÓN DE LOGIN FINAL ---
+      const isLoginVisibleFinal = await page.isVisible('#txtRuc').catch(() => false);
+      if (isLoginVisibleFinal) {
+        const errorText = await page.evaluate(() => {
+          const errorEl = document.querySelector('.alert, #error_div, .bootstrap-dialog-message, #lblMensajeError, .text-danger, .error-message');
+          return errorEl ? errorEl.innerText.trim() : null;
+        }).catch(() => null);
+        
+        try {
+          const fs = require('fs');
+          const distDir = path.join(__dirname, '../dist');
+          if (fs.existsSync(distDir)) {
+            await page.screenshot({ path: path.join(distDir, 'screenshot_error.png') });
+            logger.warn('[SCRAPER] Captura de pantalla guardada en screenshot_error.png debido a login fallido (verificación final)');
+          }
+        } catch (sErr) {}
+
+        throw new Error(errorText || 'Error de autenticación en SUNAT SOL o credenciales incorrectas.');
+      }
 
       // --- ESTRATEGIA DE EXTRACCIÓN HÍBRIDA ---
       let mensajesDOM = await this.extraerCodigosMensajes(page);
