@@ -3,10 +3,11 @@ import { useStore } from '../store';
 import { Mail, Paperclip, AlertCircle, CheckCircle2, ChevronRight, Building2, Download, Loader2, LogOut } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
+// Cache global persistente que sobrevive al desmontaje del componente (navegación por pestañas)
+const globalBuzonCache: Record<string, string> = {};
+
 const BuzonView: React.FC = () => {
   const { workspaces, currentCompany, buzonMensajes, setBuzonMensajes, markBuzonMensajeAsRead } = useStore();
-  
-  const cachedDetallesRef = useRef<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedMessage, setSelectedMessage] = useState<any>(null);
@@ -49,6 +50,8 @@ const BuzonView: React.FC = () => {
       updateBrowserId(null);
       setStatusText('');
       setError(null);
+      // Limpiar caché global de notificaciones
+      Object.keys(globalBuzonCache).forEach(key => delete globalBuzonCache[key]);
     } catch (e) {
       console.error("Error al cerrar sesión:", e);
     }
@@ -119,8 +122,8 @@ const BuzonView: React.FC = () => {
 
   useEffect(() => {
     if (selectedMessage) {
-      if (cachedDetallesRef.current[selectedMessage.id]) {
-        setDetalleHtml(cachedDetallesRef.current[selectedMessage.id]);
+      if (globalBuzonCache[selectedMessage.id]) {
+        setDetalleHtml(globalBuzonCache[selectedMessage.id]);
         setLoadingDetalle(false);
         return;
       }
@@ -136,11 +139,11 @@ const BuzonView: React.FC = () => {
             });
             if (res.success && res.html) {
               setDetalleHtml(res.html);
-              cachedDetallesRef.current[selectedMessage.id] = res.html;
+              globalBuzonCache[selectedMessage.id] = res.html;
             } else {
               const fallback = selectedMessage.contenido || '<center style="padding:20px;color:#d32f2f">No se pudo extraer el contenido HTML de este mensaje.</center>';
               setDetalleHtml(fallback);
-              cachedDetallesRef.current[selectedMessage.id] = fallback;
+              globalBuzonCache[selectedMessage.id] = fallback;
             }
           } catch (e) {
             console.error("Error extrayendo HTML:", e);
@@ -434,7 +437,7 @@ const BuzonView: React.FC = () => {
                            });
                            if (res.success && res.html) {
                              setDetalleHtml(res.html);
-                             cachedDetallesRef.current[selectedMessage.id] = res.html;
+                             globalBuzonCache[selectedMessage.id] = res.html;
                            }
                            setLoadingDetalle(false);
                          }}
