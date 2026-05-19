@@ -3,12 +3,14 @@ const path = require('path');
 const AdmZip = require('adm-zip');
 const logger = require('./logger');
 
+const { sireDir } = require('../server/storageConfig');
+
 /**
  * Generador de archivos para cumplimiento SIRE SUNAT
  */
 class SireFileGenerator {
   constructor() {
-    this.sireDir = path.join(process.cwd(), 'SIRE SUNAT');
+    this.sireDir = sireDir;
     this.ensureDir();
   }
 

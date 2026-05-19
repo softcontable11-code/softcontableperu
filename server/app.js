@@ -5,6 +5,7 @@ const fs = require('fs');
 const db = require('./databaseServer');
 const buzonHandler = require('../main/buzonHandler');
 const sireHandler = require('../modulo/sireHandler');
+const { sireDir, buzonDir } = require('./storageConfig');
 
 const app = express();
 const authRoutes = require('./authRoutes');
@@ -287,7 +288,7 @@ app.post('/api/buzon/descargar-archivo-constancia', async (req, res) => {
         
         const fs = require('fs');
         const safePath = path.resolve(ruta);
-        const downloadBase = path.resolve(path.join(process.cwd(), 'descargas_buzon'));
+        const downloadBase = path.resolve(buzonDir);
         if (!safePath.startsWith(downloadBase)) {
             return res.status(403).json({ success: false, error: 'Acceso no autorizado.' });
         }
@@ -341,7 +342,7 @@ app.post('/api/sire/generar-archivo', async (req, res) => {
 
 app.get('/api/sire/archivos', async (req, res) => {
     try {
-        const outputDir = path.join(process.cwd(), 'SIRE SUNAT');
+        const outputDir = sireDir;
         if (!fs.existsSync(outputDir)) {
             return res.json({ archivos: [] });
         }
@@ -376,7 +377,7 @@ app.get('/api/sire/archivos', async (req, res) => {
 app.delete('/api/sire/archivos/:nombre', async (req, res) => {
     try {
         const nombre = req.params.nombre;
-        const outputDir = path.join(process.cwd(), 'SIRE SUNAT');
+        const outputDir = sireDir;
         
         const findFile = (dir, target) => {
             if (!fs.existsSync(dir)) return null;
@@ -413,7 +414,7 @@ app.delete('/api/sire/archivos/:nombre', async (req, res) => {
 app.get('/api/sire/archivos/:nombre/descargar', async (req, res) => {
     try {
         const nombre = req.params.nombre;
-        const outputDir = path.join(process.cwd(), 'SIRE SUNAT');
+        const outputDir = sireDir;
         
         const findFile = (dir, target) => {
             if (!fs.existsSync(dir)) return null;

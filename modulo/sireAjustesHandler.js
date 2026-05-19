@@ -16,10 +16,12 @@ const AdmZip = require('adm-zip');
 const axios = require('axios');
 const ajustesExcelCreator = require('./ajustesExcelCreator');
 
+const { sireDir } = require('../server/storageConfig');
+
 class SireAjustesHandler {
   constructor() {
     this.ajustesWindow = null;
-    this.outputPath = path.join(process.cwd(), 'SIRE SUNAT');
+    this.outputPath = sireDir;
     this.dataPath = path.join(process.cwd(), 'data');
   }
 

@@ -3,12 +3,14 @@ const fs = require('fs');
 const path = require('path');
 const logger = require('./logger');
 
+const { sireDir } = require('../server/storageConfig');
+
 /**
  * Generador de archivos Excel para SIRE
  */
 class ExcelGenerator {
   constructor() {
-    this.outputDir = path.join(process.cwd(), 'SIRE SUNAT');
+    this.outputDir = sireDir;
     this.ensureOutputDir();
   }
 

@@ -6,6 +6,8 @@ const config = require('./config');
 const emailService = require('./emailService');
 const pdfMerger = require('./pdfMergerService');
 
+const { buzonDir } = require('../server/storageConfig');
+
 /**
  * Handler avanzado para el módulo Buzón Electrónico SUNAT v3.0
  * Incluye unión de PDFs, extracción fallback y detección profunda de archivos.
@@ -13,7 +15,7 @@ const pdfMerger = require('./pdfMergerService');
 class BuzonHandler {
   constructor() {
     this.activeSessions = new Map(); // browserId -> { browser, page, cliente }
-    this.downloadPath = path.join(process.cwd(), 'descargas_buzon');
+    this.downloadPath = buzonDir;
     this.ensureDirectories();
   }
 
