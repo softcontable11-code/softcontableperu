@@ -7,7 +7,33 @@ const DiarioView: React.FC = () => {
   const store = useStore();
   const { currentCompany, deleteJournalEntry } = store;
   
-  const [filterPeriodo, setFilterPeriodo] = React.useState(`${currentCompany.period || '2025'}04`);
+  const meses = [
+    { value: '01', label: 'Enero' },
+    { value: '02', label: 'Febrero' },
+    { value: '03', label: 'Marzo' },
+    { value: '04', label: 'Abril' },
+    { value: '05', label: 'Mayo' },
+    { value: '06', label: 'Junio' },
+    { value: '07', label: 'Julio' },
+    { value: '08', label: 'Agosto' },
+    { value: '09', label: 'Septiembre' },
+    { value: '10', label: 'Octubre' },
+    { value: '11', label: 'Noviembre' },
+    { value: '12', label: 'Diciembre' },
+  ];
+
+  const currentYear = new Date().getFullYear();
+  const anios = Array.from({ length: 6 }, (_, i) => String(currentYear - i));
+
+  const initialYear = currentCompany.period || String(currentYear);
+  const initialMonth = String(new Date().getMonth() + 1).padStart(2, '0');
+
+  const [selectedAnio, setSelectedAnio] = React.useState(initialYear);
+  const [selectedMes, setSelectedMes] = React.useState(initialMonth);
+
+  const filterPeriodo = React.useMemo(() => {
+    return `${selectedAnio}${selectedMes}`;
+  }, [selectedAnio, selectedMes]);
 
   const journal = store.journal.filter(entry => {
     if (entry.cta.trim().toUpperCase() === 'GLOSA') return false;
@@ -113,16 +139,31 @@ const DiarioView: React.FC = () => {
           </div>
         </div>
         <div className="flex gap-2 items-center">
-           <div className="flex items-center bg-app-bg border border-app-border rounded-lg px-2 mr-2">
-             <span className="text-[9px] font-bold text-app-muted uppercase mr-2">Periodo:</span>
-             <input 
-               type="text" 
-               className="bg-transparent border-none outline-none text-[10px] font-mono w-16 h-7 text-pld-blue"
-               value={filterPeriodo}
-               onChange={e => setFilterPeriodo(e.target.value)}
-               placeholder="YYYYMM"
-             />
-           </div>
+            <div className="flex items-center bg-app-bg border border-app-border rounded-lg px-2 mr-2 gap-1 h-8">
+              <span className="text-[9px] font-bold text-app-muted uppercase mr-1">Periodo:</span>
+              <select
+                value={selectedMes}
+                onChange={(e) => setSelectedMes(e.target.value)}
+                className="bg-transparent border-none outline-none text-[10px] font-bold text-pld-blue uppercase cursor-pointer"
+              >
+                {meses.map((m) => (
+                  <option key={m.value} value={m.value} className="bg-app-surface text-app-text">
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={selectedAnio}
+                onChange={(e) => setSelectedAnio(e.target.value)}
+                className="bg-transparent border-none outline-none text-[10px] font-bold text-pld-blue cursor-pointer"
+              >
+                {anios.map((y) => (
+                  <option key={y} value={y} className="bg-app-surface text-app-text">
+                    {y}
+                  </option>
+                ))}
+              </select>
+            </div>
            <button onClick={() => window.print()} className="h-8 px-3 bg-app-bg border border-app-border rounded-lg hover:text-pld-blue transition-colors flex items-center gap-1.5 text-[10px] font-bold text-app-muted" title="Imprimir"><Printer size={14} /> Imprimir</button>
            <button onClick={() => exportTableToXLSX('diario-table', 'Libro_Diario_5_1')} className="h-8 px-3 bg-app-bg border border-app-border rounded-lg hover:text-pld-blue transition-colors flex items-center gap-1.5 text-[10px] font-bold text-app-muted" title="Exportar a Excel"><FileDown size={14} /> Excel</button>
         </div>
