@@ -377,21 +377,18 @@ class BuzonHandler {
          }
       }, msgId);
 
-      // 3. Esperar que se cargue el panel de detalle y el contenedor sea real
-      await Promise.any([
-         frame.waitForSelector('#detallePanel', { timeout: 8000 }),
-         frame.waitForSelector('.contenedor-correo', { timeout: 8000 })
-      ]).catch(() => {});
-      await page.waitForTimeout(500); // Pequeño margen para estabilidad
+      // 3. Esperar que se cargue el panel de detalle de forma estricta y que sea visible
+      await frame.waitForSelector('#detallePanel', { state: 'visible', timeout: 8000 }).catch(() => {});
+      await page.waitForTimeout(600); // Pequeño margen para estabilidad
 
-      const panelVisible = await frame.isVisible('#detallePanel') || await frame.isVisible('.contenedor-correo');
+      const panelVisible = await frame.isVisible('#detallePanel');
       if (!panelVisible) return null;
 
       // 4. Extraer datos del DOM con limpieza de Menú
       const data = await frame.evaluate(() => {
          const title = document.getElementById('idTitleDetalle')?.innerText || '';
          const date = document.getElementById('idFechaDetalle')?.innerText || '';
-         const contentEl = document.getElementById('detallePanel') || document.querySelector('.contenedor-correo');
+         const contentEl = document.getElementById('detallePanel');
          
          if (!contentEl) return null;
 
@@ -716,7 +713,7 @@ class BuzonHandler {
       await page.waitForTimeout(1500);
 
       const { htmlContent, baseUri } = await frameToUse.evaluate(() => {
-        const padre = document.getElementById('contenedorPadre');
+        const padre = document.getElementById('detallePanel') || document.getElementById('contenedorPadre');
         const content = padre ? padre.outerHTML : document.body.innerHTML;
         return { htmlContent: content, baseUri: document.baseURI || window.location.href };
       });
