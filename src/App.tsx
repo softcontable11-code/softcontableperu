@@ -535,6 +535,14 @@ const App: React.FC = () => {
                 </div>
               )}
             </div>
+            <button
+              onClick={() => setActiveTab('EMPRESA')}
+              className="h-9 px-4 bg-app-bg hover:bg-blue-50 dark:hover:bg-blue-600/10 border border-app-border rounded-xl text-app-text hover:text-blue-600 dark:hover:text-blue-400 font-bold transition-all flex items-center gap-2 text-[10px] uppercase tracking-widest shadow-sm"
+              title="Configuración de la Empresa"
+            >
+              <Building2 size={14} className="text-blue-600 dark:text-blue-400" />
+              <span>Configuración de la Empresa</span>
+            </button>
           </div>
 
           {/* Right: Actions */}

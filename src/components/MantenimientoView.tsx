@@ -29,8 +29,34 @@ const MantenimientoView: React.FC = () => {
   const [editDesc, setEditDesc] = useState('');
   const [editMonto, setEditMonto] = useState('');
 
-  // Filter state
-  const [filterPeriodo, setFilterPeriodo] = useState(`${currentCompany.period || '2025'}12`);
+  const meses = [
+    { value: '01', label: 'Enero' },
+    { value: '02', label: 'Febrero' },
+    { value: '03', label: 'Marzo' },
+    { value: '04', label: 'Abril' },
+    { value: '05', label: 'Mayo' },
+    { value: '06', label: 'Junio' },
+    { value: '07', label: 'Julio' },
+    { value: '08', label: 'Agosto' },
+    { value: '09', label: 'Septiembre' },
+    { value: '10', label: 'Octubre' },
+    { value: '11', label: 'Noviembre' },
+    { value: '12', label: 'Diciembre' },
+  ];
+
+  const currentYear = new Date().getFullYear();
+  const anios = Array.from({ length: 6 }, (_, i) => String(currentYear - i));
+
+  const initialYear = currentCompany.period || String(currentYear);
+  const initialMonth = String(new Date().getMonth() + 1).padStart(2, '0');
+
+  const [selectedAnio, setSelectedAnio] = useState(initialYear);
+  const [selectedMes, setSelectedMes] = useState(initialMonth);
+
+  const filterPeriodo = React.useMemo(() => {
+    return `${selectedAnio}${selectedMes}`;
+  }, [selectedAnio, selectedMes]);
+
   const [filterAnexo, setFilterAnexo] = useState('01');
   const [filteredRecords, setFilteredRecords] = useState(maintenanceRecords);
 
@@ -138,11 +164,18 @@ const MantenimientoView: React.FC = () => {
              </h3>
 
              <div className="flex flex-wrap items-end gap-6">
-                <div className="w-40 space-y-2">
+                <div className="w-56 space-y-2">
                    <label className="block text-[10px] font-black text-app-muted uppercase tracking-widest">Periodo</label>
-                   <input type="text" className="w-full h-11 bg-app-bg border border-app-border rounded-xl text-sm font-mono px-4 focus:border-pld-blue transition-all"
-                     value={filterPeriodo} onChange={e => setFilterPeriodo(e.target.value)}
-                     placeholder={`${currentCompany.period || '2025'}12`} />
+                   <div className="flex gap-2 w-full">
+                     <select className="flex-1 h-11 bg-app-bg border border-app-border text-app-text rounded-xl px-3 outline-none focus:border-pld-blue transition-all text-xs font-bold"
+                       value={selectedMes} onChange={e => setSelectedMes(e.target.value)}>
+                       {meses.map(m => <option key={m.value} value={m.value} className="bg-app-surface text-app-text">{m.label}</option>)}
+                     </select>
+                     <select className="w-24 h-11 bg-app-bg border border-app-border text-app-text rounded-xl px-3 outline-none focus:border-pld-blue transition-all text-xs font-bold"
+                       value={selectedAnio} onChange={e => setSelectedAnio(e.target.value)}>
+                       {anios.map(y => <option key={y} value={y} className="bg-app-surface text-app-text">{y}</option>)}
+                     </select>
+                   </div>
                 </div>
                 <div className="w-64 space-y-2">
                    <label className="block text-[10px] font-black text-app-muted uppercase tracking-widest">Sub-Diario (Anexo)</label>
