@@ -26,7 +26,7 @@ import { parseSireTxt } from '../engine/sireParser';
 import { reconcileSireWithERP, type ReconciliationSummary, type DiagnosticLevel } from '../engine/sireReconciliation';
 
 const SireView: React.FC = () => {
-  const { currentCompany, purchases, sales, syncCurrentWorkspace } = useStore();
+  const { currentCompany, purchases, sales, syncCurrentWorkspace, deletePurchase, deleteSale, setActiveTab } = useStore();
   const [proceso, setProceso] = useState<'Generar RCE' | 'Generar RVIE'>('Generar RCE');
   const [periodoMes, setPeriodoMes] = useState(new Date().getMonth());
   const [periodoAnio, setPeriodoAnio] = useState(new Date().getFullYear());
@@ -234,6 +234,57 @@ const SireView: React.FC = () => {
     } catch (error) {
       toast.error('Error al importar.');
     }
+  };
+
+  const handleDeleteRecord = async (item: any) => {
+    let targetId = '';
+    let isSunatRecord = false;
+    let label = '';
+    
+    if (item.status === 'ONLY_LOCAL') {
+      targetId = item.local?.id;
+      isSunatRecord = false;
+      label = `el comprobante contable local ${item.local?.tipo_doc} ${item.local?.serie}-${item.local?.numero}`;
+    } else {
+      targetId = item.sunat?.id;
+      isSunatRecord = true;
+      label = `el registro importado de SUNAT ${item.sunat?.tipo_doc} ${item.sunat?.serie}-${item.sunat?.numero}`;
+    }
+    
+    if (!targetId) return;
+    
+    const confirmMessage = isSunatRecord
+      ? `¿Estás seguro de que deseas eliminar ${label} de la propuesta del SIRE? (Podrás volver a sincronizarlo desde SUNAT)`
+      : `⚠️ ADVERTENCIA: ¿Estás seguro de que deseas eliminar ${label}? Esto borrará el asiento contable local asociado.`;
+      
+    if (!window.confirm(confirmMessage)) return;
+    
+    try {
+      if (proceso === 'Generar RCE') {
+        await deletePurchase(targetId);
+      } else {
+        await deleteSale(targetId);
+      }
+      toast.success('Registro eliminado correctamente.');
+      await syncCurrentWorkspace();
+    } catch (e: any) {
+      toast.error(`Error al eliminar: ${e.message}`);
+    }
+  };
+
+  const showDiscrepancyDetails = (item: any) => {
+    const diffTotal = (item.sunat?.total || 0) - (item.local?.total || 0);
+    const diffBi = (item.sunat?.bi || 0) - (item.local?.bi || 0);
+    const diffIgv = (item.sunat?.igv || 0) - (item.local?.igv || 0);
+    
+    toast((t) => (
+      <div className="flex flex-col gap-1 text-[11px] font-bold">
+        <p className="text-amber-500 font-black border-b border-app-border pb-1 mb-1">DETALLE DE DISCREPANCIAS</p>
+        <p>Total SUNAT: S/ {item.sunat?.total.toFixed(2)} | Local: S/ {item.local?.total.toFixed(2)} (Diff: S/ {diffTotal.toFixed(2)})</p>
+        <p>B.I. SUNAT: S/ {item.sunat?.bi.toFixed(2)} | Local: S/ {item.local?.bi.toFixed(2)} (Diff: S/ {diffBi.toFixed(2)})</p>
+        <p>I.G.V. SUNAT: S/ {item.sunat?.igv.toFixed(2)} | Local: S/ {item.local?.igv.toFixed(2)} (Diff: S/ {diffIgv.toFixed(2)})</p>
+      </div>
+    ), { duration: 6000, icon: '🔍' });
   };
 
   const handleDeleteArchivo = async (nombre: string) => {
@@ -577,13 +628,30 @@ const SireView: React.FC = () => {
                                 <FileDown size={14} />
                               </button>
                             )}
-                            {item.status === 'ONLY_LOCAL' && (
-                              <button className="p-1.5 hover:bg-rose-500/20 text-rose-500 rounded-lg transition-all" title="Documento no existe en Propuesta">
+                            {item.status === 'DISCREPANCY' && (
+                              <button 
+                                onClick={() => showDiscrepancyDetails(item)}
+                                className="p-1.5 hover:bg-amber-500/20 text-amber-500 rounded-lg transition-all" 
+                                title="Ver detalles de discrepancias"
+                              >
                                 <AlertCircle size={14} />
                               </button>
                             )}
-                            <button className="p-1.5 hover:bg-blue-500/10 text-app-muted hover:text-white rounded-lg transition-all">
-                              <ExternalLink size={14} />
+                            {item.local && (
+                              <button 
+                                onClick={() => setActiveTab(proceso === 'Generar RCE' ? 'COMPRAS' : 'VENTAS')}
+                                className="p-1.5 hover:bg-blue-500/10 text-app-muted hover:text-white rounded-lg transition-all"
+                                title="Ir a registro contable local"
+                              >
+                                <ExternalLink size={14} />
+                              </button>
+                            )}
+                            <button 
+                              onClick={() => handleDeleteRecord(item)}
+                              className="p-1.5 hover:bg-rose-500/20 text-rose-500 rounded-lg transition-all" 
+                              title={item.status === 'ONLY_LOCAL' ? 'Eliminar comprobante local' : 'Eliminar registro del SIRE'}
+                            >
+                              <Trash2 size={14} />
                             </button>
                           </div>
                         </td>
