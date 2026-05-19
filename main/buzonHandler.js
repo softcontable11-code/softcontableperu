@@ -378,7 +378,10 @@ class BuzonHandler {
       }, msgId);
 
       // 3. Esperar que se cargue el panel de detalle y el contenedor sea real
-      await frame.waitForSelector('.contenedor-correo', { timeout: 8000 }).catch(() => {});
+      await Promise.any([
+         frame.waitForSelector('#detallePanel', { timeout: 8000 }),
+         frame.waitForSelector('.contenedor-correo', { timeout: 8000 })
+      ]).catch(() => {});
       await page.waitForTimeout(500); // Pequeño margen para estabilidad
 
       const panelVisible = await frame.isVisible('#detallePanel') || await frame.isVisible('.contenedor-correo');
@@ -388,7 +391,7 @@ class BuzonHandler {
       const data = await frame.evaluate(() => {
          const title = document.getElementById('idTitleDetalle')?.innerText || '';
          const date = document.getElementById('idFechaDetalle')?.innerText || '';
-         const contentEl = document.querySelector('.contenedor-correo');
+         const contentEl = document.getElementById('detallePanel') || document.querySelector('.contenedor-correo');
          
          if (!contentEl) return null;
 
