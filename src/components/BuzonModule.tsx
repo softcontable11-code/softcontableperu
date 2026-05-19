@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useStore } from '../store';
 import { Mail, Paperclip, AlertCircle, CheckCircle2, ChevronRight, Building2, Download, Loader2, LogOut } from 'lucide-react';
 import { toast } from 'react-hot-toast';
@@ -6,6 +6,7 @@ import { toast } from 'react-hot-toast';
 const BuzonView: React.FC = () => {
   const { workspaces, currentCompany, buzonMensajes, setBuzonMensajes, markBuzonMensajeAsRead } = useStore();
   
+  const cachedDetallesRef = useRef<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedMessage, setSelectedMessage] = useState<any>(null);
@@ -117,29 +118,44 @@ const BuzonView: React.FC = () => {
   const companyToUse = isCurrentActive ? currentCompany : (activeWs || currentCompany);
 
   useEffect(() => {
-    if (selectedMessage && activeBrowserId) {
-      const fetchDetalle = async () => {
-        setLoadingDetalle(true);
-        setDetalleHtml(null);
-        try {
-          const res = await (window as any).electronAPI.buzonExtraerDetalle({
-            browserId: activeBrowserId,
-            mensajeId: selectedMessage.id
-          });
-          if (res.success && res.html) {
-            setDetalleHtml(res.html);
-          } else {
-            setDetalleHtml(selectedMessage.contenido || '<center style="padding:20px;color:#d32f2f">No se pudo extraer el contenido HTML de este mensaje.</center>');
+    if (selectedMessage) {
+      if (cachedDetallesRef.current[selectedMessage.id]) {
+        setDetalleHtml(cachedDetallesRef.current[selectedMessage.id]);
+        setLoadingDetalle(false);
+        return;
+      }
+
+      if (activeBrowserId) {
+        const fetchDetalle = async () => {
+          setLoadingDetalle(true);
+          setDetalleHtml(null);
+          try {
+            const res = await (window as any).electronAPI.buzonExtraerDetalle({
+              browserId: activeBrowserId,
+              mensajeId: selectedMessage.id
+            });
+            if (res.success && res.html) {
+              setDetalleHtml(res.html);
+              cachedDetallesRef.current[selectedMessage.id] = res.html;
+            } else {
+              const fallback = selectedMessage.contenido || '<center style="padding:20px;color:#d32f2f">No se pudo extraer el contenido HTML de este mensaje.</center>';
+              setDetalleHtml(fallback);
+              cachedDetallesRef.current[selectedMessage.id] = fallback;
+            }
+          } catch (e) {
+            console.error("Error extrayendo HTML:", e);
+            const errFallback = selectedMessage.contenido || '<center style="padding:20px;color:#d32f2f">Error de conexión al obtener detalles.</center>';
+            setDetalleHtml(errFallback);
+          } finally {
+            setLoadingDetalle(false);
           }
-        } catch (e) {
-          console.error("Error extrayendo HTML:", e);
-          setDetalleHtml(selectedMessage.contenido || '<center style="padding:20px;color:#d32f2f">Error de conexión al obtener detalles.</center>');
-        } finally {
-          setLoadingDetalle(false);
-        }
-      };
-      
-      fetchDetalle();
+        };
+        
+        fetchDetalle();
+      } else {
+        setDetalleHtml(selectedMessage.contenido || null);
+        setLoadingDetalle(false);
+      }
     } else {
       setDetalleHtml(null);
       setLoadingDetalle(false);
@@ -416,7 +432,10 @@ const BuzonView: React.FC = () => {
                              browserId: activeBrowserId,
                              mensajeId: selectedMessage.id
                            });
-                           if (res.success && res.html) setDetalleHtml(res.html);
+                           if (res.success && res.html) {
+                             setDetalleHtml(res.html);
+                             cachedDetallesRef.current[selectedMessage.id] = res.html;
+                           }
                            setLoadingDetalle(false);
                          }}
                          className="p-1.5 hover:bg-pld-blue/10 text-pld-blue rounded-lg transition-colors border border-transparent hover:border-pld-blue/20"
