@@ -62,7 +62,7 @@ class SunatApiClient {
 
       return {
         success: false,
-        error: error.response?.data?.error_description || error.message
+        error: error.response?.data?.error_description || (error.response?.data ? JSON.stringify(error.response.data) : error.message)
       };
     }
   }
@@ -107,7 +107,7 @@ class SunatApiClient {
 
       return {
         success: false,
-        error: error.response?.data?.message || error.message
+        error: error.response?.data?.message || (error.response?.data ? JSON.stringify(error.response.data) : error.message)
       };
     }
   }
@@ -151,7 +151,7 @@ class SunatApiClient {
 
       return {
         success: false,
-        error: error.response?.data?.message || error.message
+        error: error.response?.data?.message || (error.response?.data ? JSON.stringify(error.response.data) : error.message)
       };
     }
   }
@@ -211,7 +211,7 @@ class SunatApiClient {
 
       return {
         success: false,
-        error: error.response?.data?.message || error.message
+        error: error.response?.data?.message || (error.response?.data ? JSON.stringify(error.response.data) : error.message)
       };
     }
   }
