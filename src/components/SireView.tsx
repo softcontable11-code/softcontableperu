@@ -123,6 +123,21 @@ const SireView: React.FC = () => {
     };
   }, [comparedData]);
 
+  const uniqueArchivos = useMemo(() => {
+    const filtered = archivos.filter(file => proceso === 'Generar RCE' ? file.nombre.includes('RCE') : file.nombre.includes('RVIE'));
+    const map = new Map<string, typeof archivos[0]>();
+    filtered.forEach(file => {
+      const parts = file.nombre.split('_');
+      if (parts.length >= 3) {
+        const key = `${parts[0]}_${parts[1]}_${parts[2]}`;
+        if (!map.has(key)) map.set(key, file);
+      } else {
+        map.set(file.nombre, file);
+      }
+    });
+    return Array.from(map.values());
+  }, [archivos, proceso]);
+
   // --- Handlers ---
   const loadArchivos = async () => {
     if (!electron) return;
@@ -631,14 +646,25 @@ const SireView: React.FC = () => {
             </div>
             
             <div className="flex-1 overflow-y-auto p-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 auto-rows-min">
-              {archivos.filter(file => proceso === 'Generar RCE' ? file.nombre.includes('RCE') : file.nombre.includes('RVIE')).map((file, idx) => (
+              {uniqueArchivos.map((file, idx) => {
+                let exactTime = file.fecha;
+                const parts = file.nombre.split('_');
+                if (parts.length >= 4) {
+                  const timestampStr = parts[3].split('.')[0];
+                  const ts = Number(timestampStr);
+                  if (!isNaN(ts)) {
+                    const date = new Date(ts);
+                    exactTime = `F: ${date.toLocaleDateString('es-PE')} - H: ${date.toLocaleTimeString('es-PE')}`;
+                  }
+                }
+                return (
                 <div key={idx} className="bg-app-bg/50 border border-app-border hover:border-blue-500/30 rounded-xl p-3 flex items-center gap-3 group transition-all">
                   <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${file.nombre.includes('RCE') ? 'bg-violet-500/10 text-violet-500' : 'bg-emerald-500/10 text-emerald-500'}`}>
                     <FileCheck size={20} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-[10px] font-black text-app-text truncate uppercase tracking-tight group-hover:text-blue-500 transition-colors">{file.nombre}</p>
-                    <p className="text-[8px] text-app-muted font-bold mt-0.5">{file.fecha}</p>
+                    <p className="text-[9px] text-app-muted font-bold mt-1">{exactTime}</p>
                   </div>
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button 
@@ -657,7 +683,7 @@ const SireView: React.FC = () => {
                     </button>
                   </div>
                 </div>
-              ))}
+              )})}
               {archivos.length === 0 && (
                 <div className="col-span-full py-20 flex flex-col items-center opacity-20">
                   <FileJson size={40} className="mb-3" />
