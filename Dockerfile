@@ -7,7 +7,7 @@ COPY . .
 RUN npm run build-renderer
 
 # STAGE 2: Production Server
-FROM mcr.microsoft.com/playwright:v1.49.0-jammy
+FROM mcr.microsoft.com/playwright:v1.58.2-jammy
 WORKDIR /app
 
 # Instalar dependencias para better-sqlite3 y utilidades
