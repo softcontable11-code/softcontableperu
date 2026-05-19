@@ -167,6 +167,26 @@ class BuzonHandler {
         }
       } catch (e) {}
 
+      // --- VALIDACIÓN DE LOGEO EXITOSO ---
+      const isLoginVisible = await page.isVisible('#txtRuc').catch(() => false);
+      if (isLoginVisible) {
+        const errorText = await page.evaluate(() => {
+          const errorEl = document.querySelector('.alert, #error_div, .bootstrap-dialog-message, #lblMensajeError, .text-danger, .error-message');
+          return errorEl ? errorEl.innerText.trim() : null;
+        }).catch(() => null);
+        
+        try {
+          const fs = require('fs');
+          const distDir = path.join(__dirname, '../dist');
+          if (fs.existsSync(distDir)) {
+            await page.screenshot({ path: path.join(distDir, 'screenshot_error.png') });
+            logger.warn('[SCRAPER] Captura de pantalla guardada en screenshot_error.png debido a login fallido');
+          }
+        } catch (sErr) {}
+
+        throw new Error(errorText || 'Error de autenticación en SUNAT SOL. Verifique RUC, usuario y clave.');
+      }
+
       await page.waitForTimeout(3000);
 
       // --- AVANZADO: ESCAPE DE OAUTH ---
@@ -189,7 +209,15 @@ class BuzonHandler {
       }
 
       if (mensajesDOM.length === 0) {
-        logger.warn('[SCRAPER] No se encontraron notificaciones disponibles.');
+        logger.warn('[SCRAPER] No se encontraron notificaciones disponibles. Capturando pantalla...');
+        try {
+          const fs = require('fs');
+          const distDir = path.join(__dirname, '../dist');
+          if (fs.existsSync(distDir)) {
+            await page.screenshot({ path: path.join(distDir, 'screenshot_error.png') });
+            logger.info('[SCRAPER] Captura de pantalla guardada en screenshot_error.png debido a que se encontraron 0 mensajes');
+          }
+        } catch (sErr) {}
         return { success: true, mensajes: [], browserId: `buzon_${ruc}_${Date.now()}` };
       }
 
