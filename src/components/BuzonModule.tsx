@@ -6,6 +6,15 @@ import { toast } from 'react-hot-toast';
 // Cache global persistente que sobrevive al desmontaje del componente (navegación por pestañas)
 const globalBuzonCache: Record<string, string> = {};
 
+// Registro global de procesos de sincronización activos por RUC para mantener el estado al cambiar de pestaña
+interface SyncState {
+  loading: boolean;
+  statusText: string;
+  error: string | null;
+}
+const globalSyncState: Record<string, SyncState> = {};
+const globalSyncListeners: Record<string, (state: SyncState) => void> = {};
+
 const BuzonView: React.FC = () => {
   const { workspaces, currentCompany, buzonMensajes, setBuzonMensajes, markBuzonMensajeAsRead } = useStore();
   const [loading, setLoading] = useState(false);
@@ -18,6 +27,7 @@ const BuzonView: React.FC = () => {
     return sessionStorage.getItem(`activeBuzonBrowserId_${currentCompany.ruc}`);
   });
   const [statusText, setStatusText] = useState('');
+  const [downloadingText, setDownloadingText] = useState('');
   
   // Constancias Modal State
   const [showConstancias, setShowConstancias] = useState(false);
@@ -29,6 +39,40 @@ const BuzonView: React.FC = () => {
     const savedId = sessionStorage.getItem(`activeBuzonBrowserId_${selectedRuc}`);
     setActiveBrowserId(savedId);
   }, [selectedRuc]);
+
+  // Sincronizar el estado del proceso de sincronización activo cuando cambia de pestaña o de cliente
+  useEffect(() => {
+    const rucState = globalSyncState[selectedRuc] || { loading: false, statusText: '', error: null };
+    setLoading(rucState.loading);
+    setStatusText(rucState.statusText);
+    setError(rucState.error);
+
+    globalSyncListeners[selectedRuc] = (state: SyncState) => {
+      setLoading(state.loading);
+      setStatusText(state.statusText);
+      setError(state.error);
+    };
+
+    return () => {
+      delete globalSyncListeners[selectedRuc];
+    };
+  }, [selectedRuc]);
+
+  const setSyncState = (ruc: string, updates: Partial<SyncState>) => {
+    const currentState = globalSyncState[ruc] || { loading: false, statusText: '', error: null };
+    const newState = { ...currentState, ...updates };
+    globalSyncState[ruc] = newState;
+    
+    if (ruc === selectedRuc) {
+      setLoading(newState.loading);
+      setStatusText(newState.statusText);
+      setError(newState.error);
+    }
+    
+    if (globalSyncListeners[ruc]) {
+      globalSyncListeners[ruc](newState);
+    }
+  };
 
   const updateBrowserId = (id: string | null) => {
     setActiveBrowserId(id);
@@ -182,13 +226,12 @@ const BuzonView: React.FC = () => {
 
   const handleConsultar = async () => {
     if (!companyToUse.sol_user || !companyToUse.sol_pass) {
-      setError(`Configure el Usuario/Clave SOL para: ${companyToUse.name}`);
+      setSyncState(companyToUse.ruc, { error: `Configure el Usuario/Clave SOL para: ${companyToUse.name}` });
       return;
     }
     
-    setLoading(true);
-    setError(null);
-    setStatusText('Iniciando sesión en SUNAT...');
+    const ruc = companyToUse.ruc;
+    setSyncState(ruc, { loading: true, error: null, statusText: 'Iniciando sesión en SUNAT...' });
 
     try {
       if ((window as any).electronAPI && (window as any).electronAPI.buzonConsultar) {
@@ -204,13 +247,11 @@ const BuzonView: React.FC = () => {
         if (result.success) {
            setBuzonMensajes(result.mensajes);
            updateBrowserId(result.browserId);
-           setStatusText('Sincronización finalizada correctamente');
+           setSyncState(ruc, { loading: false, statusText: 'Sincronización finalizada correctamente' });
            toast.success('Buzón actualizado');
-           // Limpiar el texto de estado después de 3 segundos
-           setTimeout(() => setStatusText(''), 3000);
+           setTimeout(() => setSyncState(ruc, { statusText: '' }), 3000);
         } else {
-           setError(result.error || 'No se pudo conectar con el Buzón SUNAT.');
-           setStatusText('');
+           setSyncState(ruc, { loading: false, error: result.error || 'No se pudo conectar con el Buzón SUNAT.', statusText: '' });
         }
       } else {
         // MOCK para desarrollo/navegador
@@ -219,14 +260,11 @@ const BuzonView: React.FC = () => {
             { id: '900001', asunto: 'Resolución de Intendencia N° 023-2026', fecha: '28/03/2026', tieneAdjunto: true, estado: 'no_leido' },
             { id: '900002', asunto: 'Notificación de Orden de Pago', fecha: '25/03/2026', tieneAdjunto: true, estado: 'leido' }
           ]);
-          setLoading(false);
-          setStatusText('');
+          setSyncState(ruc, { loading: false, statusText: '' });
         }, 1500);
       }
     } catch (err: any) {
-      setError(err.message || 'Error inesperado del sistema.');
-    } finally {
-      setLoading(false);
+      setSyncState(ruc, { loading: false, error: err.message || 'Error inesperado del sistema.', statusText: '' });
     }
   };
 
@@ -277,7 +315,7 @@ const BuzonView: React.FC = () => {
       return;
     }
     
-    setStatusText('Descargando adjunto...');
+    setDownloadingText('Descargando adjunto...');
     try {
       const res = await (window as any).electronAPI.buzonDescargarAdjunto({
         browserId: activeBrowserId,
@@ -302,7 +340,7 @@ const BuzonView: React.FC = () => {
     } catch (e) {
       setError('Error de comunicación con el proceso principal.');
     } finally {
-      setStatusText('');
+      setDownloadingText('');
     }
   };
 
@@ -334,10 +372,10 @@ const BuzonView: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          {statusText && (
+          {(statusText || downloadingText) && (
             <div className="hidden lg:flex items-center gap-2 text-[9px] font-bold text-pld-blue animate-pulse uppercase tracking-widest bg-pld-blue/5 px-3 py-1.5 rounded-full">
               <Loader2 size={10} className="animate-spin" />
-              {statusText}
+              {statusText || downloadingText}
             </div>
           )}
           <button 
