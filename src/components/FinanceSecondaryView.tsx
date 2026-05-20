@@ -9,7 +9,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import * as XLSX from 'xlsx';
+import { exportSingleSheet } from '../utils/excelExport';
 
 /**
  * ESTADOS FINANCIEROS SECUNDARIOS (Standardized Design)
@@ -203,11 +203,106 @@ const FinanceSecondaryView: React.FC = () => {
   }, [journal, periodoAnio, reportType]);
 
   const handleExport = () => {
-    const ws = XLSX.utils.aoa_to_sheet([['Reporte generado desde SOFTCONTABLE']]);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, `Formato ${reportType}`);
-    XLSX.writeFile(wb, `Estado_Financiero_${reportType}_${periodoAnio}.xlsx`);
-    toast.success('Excel exportado');
+    if (reportType === '3.18' && cashFlowData) {
+      const rows: any[] = [];
+      rows.push({ concepto: 'ACTIVIDADES DE OPERACIÓN', importe: null });
+      cashFlowData.operacion.items.forEach(it => {
+        rows.push({ concepto: `  ${it.label}`, importe: it.monto });
+      });
+      rows.push({ concepto: '  MENOS:', importe: null });
+      cashFlowData.operacion.menos.forEach(it => {
+        rows.push({ concepto: `    ${it.label}`, importe: -it.monto });
+      });
+      rows.push({ concepto: 'NETO ACTIVIDADES DE OPERACIÓN', importe: cashFlowData.operacion.total });
+      rows.push({ concepto: '', importe: null });
+
+      rows.push({ concepto: 'ACTIVIDADES DE INVERSIÓN', importe: null });
+      cashFlowData.inversion.items.forEach(it => {
+        rows.push({ concepto: `  ${it.label}`, importe: it.monto });
+      });
+      rows.push({ concepto: '  MENOS:', importe: null });
+      cashFlowData.inversion.menos.forEach(it => {
+        rows.push({ concepto: `    ${it.label}`, importe: -it.monto });
+      });
+      rows.push({ concepto: 'NETO ACTIVIDADES DE INVERSIÓN', importe: cashFlowData.inversion.total });
+      rows.push({ concepto: '', importe: null });
+
+      rows.push({ concepto: 'ACTIVIDADES DE FINANCIAMIENTO', importe: null });
+      cashFlowData.financiamiento.items.forEach(it => {
+        rows.push({ concepto: `  ${it.label}`, importe: it.monto });
+      });
+      rows.push({ concepto: '  MENOS:', importe: null });
+      cashFlowData.financiamiento.menos.forEach(it => {
+        rows.push({ concepto: `    ${it.label}`, importe: -it.monto });
+      });
+      rows.push({ concepto: 'NETO ACTIVIDADES DE FINANCIAMIENTO', importe: cashFlowData.financiamiento.total });
+      rows.push({ concepto: '', importe: null });
+
+      rows.push({ concepto: 'Aumento (Disminución) Neto de Efectivo', importe: cashFlowData.netoCashFlow });
+      rows.push({ concepto: 'Saldo al Inicio del Ejercicio', importe: cashFlowData.saldoInicial });
+
+      exportSingleSheet({
+        sheetName: 'Formato 3.18',
+        title: `FORMATO 3.18: ESTADO DE FLUJOS DE EFECTIVO (AÑO: ${periodoAnio})`,
+        columns: [
+          { header: 'CONCEPTO / ACTIVIDAD', key: 'concepto', width: 55 },
+          { header: 'IMPORTE S/', key: 'importe', width: 20, style: 'currency' }
+        ],
+        rows,
+        totals: {
+          concepto: 'SALDO FINAL DE EFECTIVO',
+          importe: cashFlowData.saldoFinal
+        }
+      }, `Estado_Flujo_Efectivo_${periodoAnio}`);
+    } else if (reportType === '3.19' && patrimonioData) {
+      const initialRow: any = { concepto: 'Saldos al 01 de Enero' };
+      let initialTotal = 0;
+      patrimonioData.cols.forEach(c => {
+        const val = patrimonioData.saldoInicial[c.key];
+        initialRow[c.key] = val;
+        initialTotal += val;
+      });
+      initialRow['total'] = initialTotal;
+
+      const midRows = patrimonioData.rows.map(row => {
+        const rData: any = { concepto: `${row.num} ${row.label}` };
+        let rTotal = 0;
+        patrimonioData.cols.forEach(c => {
+          const val = (row.num === '10.' && c.key === 'resultadosAcum') ? patrimonioData.movimiento[c.key] : 0;
+          rData[c.key] = val || null;
+          rTotal += val;
+        });
+        rData['total'] = rTotal || null;
+        return rData;
+      });
+
+      const finalTotals: any = { concepto: 'Saldos al 31 de Diciembre' };
+      let finalGrandTotal = 0;
+      patrimonioData.cols.forEach(c => {
+        const val = patrimonioData.saldoFinal[c.key];
+        finalTotals[c.key] = val;
+        finalGrandTotal += val;
+      });
+      finalTotals['total'] = finalGrandTotal;
+
+      exportSingleSheet({
+        sheetName: 'Formato 3.19',
+        title: `FORMATO 3.19: ESTADO DE CAMBIOS EN EL PATRIMONIO NETO (AÑO: ${periodoAnio})`,
+        columns: [
+          { header: 'DETALLE DE MOVIMIENTOS', key: 'concepto', width: 40 },
+          ...patrimonioData.cols.map(c => ({
+            header: c.label.toUpperCase(),
+            key: c.key,
+            width: 18,
+            style: 'currency' as const,
+            alignment: 'right' as const
+          })),
+          { header: 'TOTAL PATRIMONIO', key: 'total', width: 20, style: 'currency', alignment: 'right' }
+        ],
+        rows: [initialRow, ...midRows],
+        totals: finalTotals
+      }, `Estado_Cambios_Patrimonio_${periodoAnio}`);
+    }
   };
 
   return (

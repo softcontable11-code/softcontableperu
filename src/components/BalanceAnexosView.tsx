@@ -9,7 +9,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import * as XLSX from 'xlsx';
+import { exportSingleSheet } from '../utils/excelExport';
 
 /**
  * LIBRO DE INVENTARIOS Y BALANCES — ANEXOS
@@ -206,36 +206,112 @@ const BalanceAnexosView: React.FC = () => {
 
   // ─── Export ───
   const handleExport = () => {
-    let data: Record<string, unknown>[] = [];
     if (anexoType === '3.3') {
-      data = enrichedClientRows.map(r => ({
-        'Tipo Doc': r.docTipo, 'Número': r.docNum, 'Razón Social': r.nombre,
-        'Monto CxC': r.total, 'Última Fecha': r.ultimaFecha,
+      const rowsFormatted = enrichedClientRows.map(r => ({
+        tipoDoc: r.docTipo,
+        num: r.docNum,
+        nombre: r.nombre.toUpperCase(),
+        monto: r.total,
+        fecha: r.ultimaFecha
       }));
+      exportSingleSheet({
+        sheetName: 'Anexo 3.3',
+        title: `FORMATO 3.3: DETALLE DEL SALDO DE LA CUENTA 12 - CLIENTES (AÑO: ${periodoAnio})`,
+        columns: [
+          { header: 'TIPO DOC', key: 'tipoDoc', width: 12, alignment: 'center' },
+          { header: 'NÚMERO', key: 'num', width: 16, alignment: 'center' },
+          { header: 'APELLIDOS Y NOMBRES / RAZÓN SOCIAL', key: 'nombre', width: 45 },
+          { header: 'MONTO CXC S/', key: 'monto', width: 18, style: 'currency' },
+          { header: 'FECHA EMISIÓN', key: 'fecha', width: 14, alignment: 'center' }
+        ],
+        rows: rowsFormatted,
+        totals: {
+          tipoDoc: '', num: '', nombre: 'TOTAL GENERAL',
+          monto: enrichedClientRows.reduce((s, r) => s + r.total, 0),
+          fecha: ''
+        }
+      }, `Anexo_3_3_${periodoAnio}`);
     } else if (anexoType === '3.12') {
-      data = enrichedProviderRows.map(r => ({
-        'Tipo Doc': r.docTipo, 'Número': r.docNum, 'Razón Social': r.nombre,
-        'Monto CxP': r.total, 'Última Fecha': r.ultimaFecha,
+      const rowsFormatted = enrichedProviderRows.map(r => ({
+        tipoDoc: r.docTipo,
+        num: r.docNum,
+        nombre: r.nombre.toUpperCase(),
+        monto: r.total,
+        fecha: r.ultimaFecha
       }));
+      exportSingleSheet({
+        sheetName: 'Anexo 3.12',
+        title: `FORMATO 3.12: DETALLE DEL SALDO DE LA CUENTA 42 - PROVEEDORES (AÑO: ${periodoAnio})`,
+        columns: [
+          { header: 'TIPO DOC', key: 'tipoDoc', width: 12, alignment: 'center' },
+          { header: 'NÚMERO', key: 'num', width: 16, alignment: 'center' },
+          { header: 'APELLIDOS Y NOMBRES / RAZÓN SOCIAL', key: 'nombre', width: 45 },
+          { header: 'MONTO CXP S/', key: 'monto', width: 18, style: 'currency' },
+          { header: 'FECHA EMISIÓN', key: 'fecha', width: 14, alignment: 'center' }
+        ],
+        rows: rowsFormatted,
+        totals: {
+          tipoDoc: '', num: '', nombre: 'TOTAL GENERAL',
+          monto: enrichedProviderRows.reduce((s, r) => s + r.total, 0),
+          fecha: ''
+        }
+      }, `Anexo_3_12_${periodoAnio}`);
     } else if (anexoType === '3.7') {
       const source = inventoryRows.length > 0 ? inventoryRows : saldoRows.map(r => ({
         codigo: r.cta, tipoExistencia: '01', descripcion: r.desc,
         unidMedida: '07', cantidad: 0, costoUnit: 0, costoTotal: r.saldoDeudor
       }));
-      data = source.map(r => ({
-        'Código': r.codigo, 'Tipo': r.tipoExistencia, 'Descripción': r.descripcion,
-        'Unidad': r.unidMedida, 'Cantidad': r.cantidad, 'C. Unitario': r.costoUnit, 'C. Total': r.costoTotal,
+      const rowsFormatted = source.map(r => ({
+        codigo: r.codigo,
+        tipo: r.tipoExistencia,
+        descripcion: r.descripcion.toUpperCase(),
+        unidad: r.unidMedida,
+        cantidad: r.cantidad,
+        costoUnit: r.costoUnit,
+        costoTotal: r.costoTotal
       }));
+      exportSingleSheet({
+        sheetName: 'Anexo 3.7',
+        title: `FORMATO 3.7: DETALLE DEL SALDO DE EXISTENCIAS (AÑO: ${periodoAnio})`,
+        columns: [
+          { header: 'CÓDIGO', key: 'codigo', width: 14, alignment: 'center' },
+          { header: 'TIPO EXIST.', key: 'tipo', width: 12, alignment: 'center' },
+          { header: 'DESCRIPCIÓN', key: 'descripcion', width: 40 },
+          { header: 'UNIDAD', key: 'unidad', width: 10, alignment: 'center' },
+          { header: 'CANTIDAD', key: 'cantidad', width: 12, alignment: 'right' },
+          { header: 'COSTO UNIT.', key: 'costoUnit', width: 14, style: 'currency' },
+          { header: 'COSTO TOTAL', key: 'costoTotal', width: 16, style: 'currency' }
+        ],
+        rows: rowsFormatted,
+        totals: {
+          codigo: '', tipo: '', descripcion: 'TOTAL GENERAL', unidad: '', cantidad: 0, costoUnit: 0,
+          costoTotal: source.reduce((s, r) => s + r.costoTotal, 0)
+        }
+      }, `Anexo_3_7_${periodoAnio}`);
     } else {
-      data = saldoRows.map(r => ({
-        'Cuenta': r.cta, 'Denominación': r.desc, 'Deudor': r.saldoDeudor || '', 'Acreedor': r.saldoAcreedor || '',
+      const rowsFormatted = saldoRows.map(r => ({
+        cuenta: r.cta,
+        desc: r.desc.toUpperCase(),
+        deudor: r.saldoDeudor || 0,
+        acreedor: r.saldoAcreedor || 0
       }));
+      exportSingleSheet({
+        sheetName: `Anexo ${anexoType}`,
+        title: `${config.fullTitle} (AÑO: ${periodoAnio})`,
+        columns: [
+          { header: 'CUENTA', key: 'cuenta', width: 12, alignment: 'center' },
+          { header: 'DENOMINACIÓN', key: 'desc', width: 45 },
+          { header: 'SALDO DEUDOR S/', key: 'deudor', width: 18, style: 'currency' },
+          { header: 'SALDO ACREEDOR S/', key: 'acreedor', width: 18, style: 'currency' }
+        ],
+        rows: rowsFormatted,
+        totals: {
+          cuenta: '', desc: 'TOTAL GENERAL',
+          deudor: totalDeudor,
+          acreedor: totalAcreedor
+        }
+      }, `Anexo_${anexoType.replace('.', '_')}_${periodoAnio}`);
     }
-    const ws = XLSX.utils.json_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, `Formato ${anexoType}`);
-    XLSX.writeFile(wb, `Anexo_${anexoType}_${periodoAnio}.xlsx`);
-    toast.success('Anexo exportado correctamente');
   };
 
   // ─── Render table based on annexe type ───

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Landmark, Printer, FileDown } from 'lucide-react';
 import { useStore } from '../store';
-import { exportRawDataToXLSX } from '../utils/export';
+import { exportSingleSheet } from '../utils/excelExport';
 
 const ReportLine: React.FC<{ label: string; value: number; indent?: boolean; subtract?: boolean }> = ({ label, value, indent, subtract }) => {
   const formattedValue = value !== 0 ? Math.abs(value).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00';
@@ -92,39 +92,79 @@ const BalanceView: React.FC = () => {
   const totalPatrimonio = capitalSocial + capitalAdicional + excedenteReval + reservas + resultadosAcumulados + utilidadEjercicio;
 
   const handleExport = () => {
-    exportRawDataToXLSX('Estado_de_Situacion_Financiera', [
-      ['ESTADO DE SITUACIÓN FINANCIERA CONSOLIDADO (PCGE 2024/2025)'],
-      ['EMPRESA:', currentCompany.name],
-      ['RUC:', currentCompany.ruc],
-      ['PERIODO:', currentCompany.period || '2025'],
-      [],
-      ['ACTIVO', '', '', 'PASIVO Y PATRIMONIO', ''],
-      ['ACTIVO CORRIENTE', '', '', 'PASIVO CORRIENTE', ''],
-      ['Efectivo y Equivalentes de Efectivo', efectivo.toFixed(2), '', 'Tributos por Pagar', tributos.toFixed(2)],
-      ['Inversiones Financieras CP', inversionesCP.toFixed(2), '', 'Remuneraciones por Pagar', remunPorPagar.toFixed(2)],
-      ['Cuentas por Cobrar Comerciales', ctasComerciales.toFixed(2), '', 'Cuentas por Pagar Comerciales', ctasPagarComerciales.toFixed(2)],
-      ['(-) Estimación de Cobranza Dudosa', cobranzaDudosa.toFixed(2), '', 'Cuentas por Pagar Relacionadas', ctasPagarRelacionadas.toFixed(2)],
-      ['Cuentas por Cobrar Relacionadas', ctasRelacionadas.toFixed(2), '', 'Obligaciones Financieras CP', obligacionesFinan.toFixed(2)],
-      ['Otras Cuentas por Cobrar', otrasCtasCobrar.toFixed(2), '', 'Otras Cuentas por Pagar', otrasCtasPagar.toFixed(2)],
-      ['Anticipos Otorgados', anticiposActivo.toFixed(2), '', 'Pasivo Diferido CP', pasivoDiferido.toFixed(2)],
-      ['Inventarios / Existencias', existencias.toFixed(2), '', 'TOTAL PASIVO CORRIENTE', totalPasivoCorriente.toFixed(2)],
-      ['(-) Desvalorización de Inventarios', desvalorizacionExistencias.toFixed(2), '', '', ''],
-      ['TOTAL ACTIVO CORRIENTE', totalActivoCorriente.toFixed(2), '', 'PASIVO NO CORRIENTE', ''],
-      ['', '', '', 'Provisiones LP', provisionesLP.toFixed(2)],
-      ['ACTIVO NO CORRIENTE', '', '', 'TOTAL PASIVO NO CORRIENTE', totalPasivoNoCorriente.toFixed(2)],
-      ['Inversiones Mobiliarias', inversionesMobiliarias.toFixed(2), '', 'TOTAL PASIVO', totalPasivo.toFixed(2)],
-      ['Inversiones Inmobiliarias', inversionesInmobiliarias.toFixed(2), '', '', ''],
-      ['Activos por Derecho de Uso', derechoUso.toFixed(2), '', 'PATRIMONIO NETO', ''],
-      ['Inmuebles, Maquinaria y Equipo (IME)', imeBruto.toFixed(2), '', 'Capital Social', capitalSocial.toFixed(2)],
-      ['(-) Depreciación y Amortización Acumulada', depreciacionAcumulada.toFixed(2), '', 'Capital Adicional', capitalAdicional.toFixed(2)],
-      ['Activos Biológicos', activosBiologicos.toFixed(2), '', 'Excedente de Revaluación', excedenteReval.toFixed(2)],
-      ['Intangibles', intangibles.toFixed(2), '', 'Reservas / Otras Reservas', reservas.toFixed(2)],
-      ['Otros Activos no Corrientes', otrosActivosNoCorrientes.toFixed(2), '', 'Resultados Acumulados', resultadosAcumulados.toFixed(2)],
-      ['', '', '', 'Resultados del Ejercicio', utilidadEjercicio.toFixed(2)],
-      ['TOTAL ACTIVO NO CORRIENTE', totalActivoNoCorriente.toFixed(2), '', 'TOTAL PATRIMONIO NETO', totalPatrimonio.toFixed(2)],
-      [],
-      ['TOTAL ACTIVO', totalActivo.toFixed(2), '', 'TOTAL PASIVO Y PATRIMONIO', (totalPasivo + totalPatrimonio).toFixed(2)],
-    ]);
+    const rows = [
+      { concepto: 'ACTIVO CORRIENTE', importe: null },
+      { concepto: 'Efectivo y Equivalentes de Efectivo', importe: efectivo },
+      { concepto: 'Inversiones Financieras CP', importe: inversionesCP },
+      { concepto: 'Cuentas por Cobrar Comerciales', importe: ctasComerciales },
+      { concepto: '(-) Estimación de Cobranza Dudosa', importe: cobranzaDudosa },
+      { concepto: 'Cuentas por Cobrar Relacionadas', importe: ctasRelacionadas },
+      { concepto: 'Otras Cuentas por Cobrar', importe: otrasCtasCobrar },
+      { concepto: 'Anticipos Otorgados', importe: anticiposActivo },
+      { concepto: 'Inventarios / Existencias', importe: existencias },
+      { concepto: '(-) Desvalorización de Inventarios', importe: desvalorizacionExistencias },
+      { concepto: 'TOTAL ACTIVO CORRIENTE', importe: totalActivoCorriente },
+      
+      { concepto: '', importe: null },
+
+      { concepto: 'ACTIVO NO CORRIENTE', importe: null },
+      { concepto: 'Inversiones Mobiliarias', importe: inversionesMobiliarias },
+      { concepto: 'Inversiones Inmobiliarias', importe: inversionesInmobiliarias },
+      { concepto: 'Activos por Derecho de Uso', importe: derechoUso },
+      { concepto: 'Inmuebles, Maquinaria y Equipo (IME)', importe: imeBruto },
+      { concepto: '(-) Depreciación y Amortización Acumulada', importe: depreciacionAcumulada },
+      { concepto: 'Activos Biológicos', importe: activosBiologicos },
+      { concepto: 'Intangibles', importe: intangibles },
+      { concepto: 'Otros Activos no Corrientes', importe: otrosActivosNoCorrientes },
+      { concepto: 'TOTAL ACTIVO NO CORRIENTE', importe: totalActivoNoCorriente },
+
+      { concepto: 'TOTAL ACTIVO', importe: totalActivo },
+
+      { concepto: '', importe: null },
+
+      { concepto: 'PASIVO CORRIENTE', importe: null },
+      { concepto: 'Tributos por Pagar', importe: tributos },
+      { concepto: 'Remuneraciones por Pagar', importe: remunPorPagar },
+      { concepto: 'Cuentas por Pagar Comerciales', importe: ctasPagarComerciales },
+      { concepto: 'Cuentas por Pagar Relacionadas', importe: ctasPagarRelacionadas },
+      { concepto: 'Obligaciones Financieras CP', importe: obligacionesFinan },
+      { concepto: 'Otras Cuentas por Pagar', importe: otrasCtasPagar },
+      { concepto: 'Pasivo Diferido CP', importe: pasivoDiferido },
+      { concepto: 'TOTAL PASIVO CORRIENTE', importe: totalPasivoCorriente },
+
+      { concepto: '', importe: null },
+
+      { concepto: 'PASIVO NO CORRIENTE', importe: null },
+      { concepto: 'Provisiones LP', importe: provisionesLP },
+      { concepto: 'TOTAL PASIVO NO CORRIENTE', importe: totalPasivoNoCorriente },
+      
+      { concepto: 'TOTAL PASIVO', importe: totalPasivo },
+
+      { concepto: '', importe: null },
+
+      { concepto: 'PATRIMONIO NETO', importe: null },
+      { concepto: 'Capital Social', importe: capitalSocial },
+      { concepto: 'Capital Adicional', importe: capitalAdicional },
+      { concepto: 'Excedente de Revaluación', importe: excedenteReval },
+      { concepto: 'Reservas / Otras Reservas', importe: reservas },
+      { concepto: 'Resultados Acumulados', importe: resultadosAcumulados },
+      { concepto: 'Resultados del Ejercicio', importe: utilidadEjercicio },
+      { concepto: 'TOTAL PATRIMONIO NETO', importe: totalPatrimonio }
+    ];
+
+    exportSingleSheet({
+      sheetName: 'Situación Financiera',
+      title: `ESTADO DE SITUACIÓN FINANCIERA (AL 31 DE DICIEMBRE DEL ${currentCompany.period || '2025'})`,
+      columns: [
+        { header: 'RUBRO / CONCEPTO', key: 'concepto', width: 50 },
+        { header: 'IMPORTE S/', key: 'importe', width: 22, style: 'currency' }
+      ],
+      rows,
+      totals: {
+        concepto: 'TOTAL PASIVO Y PATRIMONIO',
+        importe: totalPasivo + totalPatrimonio
+      }
+    }, 'Estado_Situacion_Financiera');
   };
 
   return (

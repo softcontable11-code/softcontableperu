@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { useStore } from '../store';
 import { toast } from 'react-hot-toast';
-import * as XLSX from 'xlsx';
+import { exportMultipleSheets } from '../utils/excelExport';
 
 const MONTHS = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SET', 'OCT', 'NOV', 'DIC'];
 
@@ -288,13 +288,85 @@ const MovimientosView: React.FC = () => {
       comprasCtas.push(row);
     });
 
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(resumenData), "Resumen Fiscal");
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(ventasCtas), "Detalle Cuentas Ventas");
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(comprasCtas), "Detalle Cuentas Compras");
-    
-    XLSX.writeFile(wb, `Reporte_Fiscal_${currentCompany.ruc}_${currentCompany.period}.xlsx`);
-    toast.success('Excel generado con éxito (Resumen + Detalle Ventas + Detalle Compras)');
+    const monthColumns = MONTHS.map(m => ({
+      header: m,
+      key: m,
+      width: 12,
+      style: 'currency' as const,
+      alignment: 'right' as const
+    }));
+
+    const salesTotals: Record<string, any> = { Cuenta: 'TOTAL GENERAL', Tipo: '' };
+    MONTHS.forEach((m, idx) => {
+      salesTotals[m] = monthlyData[idx].sales.bi;
+    });
+    salesTotals['TOTAL'] = totals.s.bi;
+
+    const purchasesTotals: Record<string, any> = { Cuenta: 'TOTAL GENERAL', Tipo: '' };
+    MONTHS.forEach((m, idx) => {
+      purchasesTotals[m] = monthlyData[idx].purchases.bi;
+    });
+    purchasesTotals['TOTAL'] = totals.p.bi;
+
+    exportMultipleSheets([
+      {
+        sheetName: 'Resumen Fiscal',
+        title: 'RESUMEN FISCAL MENSUAL - IGV Y RENTA',
+        columns: [
+          { header: 'MES', key: 'Mes', width: 10, alignment: 'center' },
+          { header: 'VENTAS BI', key: 'Ventas BI', width: 16, style: 'currency' },
+          { header: 'VENTAS EXO', key: 'Ventas EXO', width: 16, style: 'currency' },
+          { header: 'VENTAS IGV', key: 'Ventas IGV', width: 16, style: 'currency' },
+          { header: 'VENTAS TOTAL', key: 'Ventas Total', width: 18, style: 'currency' },
+          { header: 'COMPRAS BI', key: 'Compras BI', width: 16, style: 'currency' },
+          { header: 'COMPRAS IGV', key: 'Compras IGV', width: 16, style: 'currency' },
+          { header: 'COMPRAS TOTAL', key: 'Compras Total', width: 18, style: 'currency' },
+          { header: 'P.A.C. RENTA', key: 'P.A.C. Renta', width: 16, style: 'currency' },
+          { header: 'PDT CALC (SIST)', key: 'PDT Calc (Sist)', width: 16, style: 'currency' },
+          { header: 'PDT DECL (MANUAL)', key: 'PDT Decl (Manual)', width: 16, style: 'currency' },
+          { header: 'DIFERENCIA', key: 'Diferencia', width: 16, style: 'currency' }
+        ],
+        rows: resumenData,
+        totals: {
+          Mes: 'TOTAL GENERAL',
+          'Ventas BI': totals.s.bi,
+          'Ventas EXO': totals.s.exo,
+          'Ventas IGV': totals.s.igv,
+          'Ventas Total': totals.s.tot,
+          'Compras BI': totals.p.bi,
+          'Compras IGV': totals.p.igv,
+          'Compras Total': totals.p.tot,
+          'P.A.C. Renta': totals.renta,
+          'PDT Calc (Sist)': totals.s.igv - totals.p.igv,
+          'PDT Decl (Manual)': monthlyData.reduce((acc, m) => acc + (m.pdt.v - m.pdt.c), 0),
+          'Diferencia': (totals.s.igv - totals.p.igv) - monthlyData.reduce((acc, m) => acc + (m.pdt.v - m.pdt.c), 0)
+        }
+      },
+      {
+        sheetName: 'Detalle Ventas',
+        title: 'DETALLE MENSUAL DE CUENTAS DE VENTAS (CLASE 7)',
+        columns: [
+          { header: 'CUENTA', key: 'Cuenta', width: 12, alignment: 'center' },
+          { header: 'TIPO', key: 'Tipo', width: 12, alignment: 'center' },
+          ...monthColumns,
+          { header: 'TOTAL', key: 'TOTAL', width: 16, style: 'currency' }
+        ],
+        rows: ventasCtas,
+        totals: salesTotals
+      },
+      {
+        sheetName: 'Detalle Compras',
+        title: 'DETALLE MENSUAL DE CUENTAS DE COMPRAS (CLASE 6)',
+        columns: [
+          { header: 'CUENTA', key: 'Cuenta', width: 12, alignment: 'center' },
+          { header: 'TIPO', key: 'Tipo', width: 12, alignment: 'center' },
+          ...monthColumns,
+          { header: 'TOTAL', key: 'TOTAL', width: 16, style: 'currency' }
+        ],
+        rows: comprasCtas,
+        totals: purchasesTotals
+      }
+    ], `Reporte_Fiscal_${currentCompany.ruc}_${currentPeriod}`);
   };
 
   const exportPDF = () => {

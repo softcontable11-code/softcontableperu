@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Scale, Printer, FileDown, AlertTriangle, CheckCircle } from 'lucide-react';
 import { useStore } from '../store';
-import { exportTableToXLSX } from '../utils/export';
+import { exportSingleSheet } from '../utils/excelExport';
 
 /**
  * HHTT — BALANCE DE COMPROBACIÓN
@@ -300,6 +300,88 @@ const HHTTView: React.FC = () => {
   const natBalanced = Math.abs((totals.perdidaNaturaleza + natUtilidadPerdida) - (totals.gananciaNaturaleza + natUtilidadGanancia)) < 0.01;
   const funBalanced = Math.abs((totals.perdidaFuncion + funUtilidadPerdida) - (totals.gananciaFuncion + funUtilidadGanancia)) < 0.01;
 
+  const handleExportExcel = () => {
+    const mainRows = rows.map(r => ({
+      cta: r.cta,
+      desc: r.desc.toUpperCase(),
+      debe: r.debe || 0,
+      haber: r.haber || 0,
+      deudor: r.deudor || 0,
+      acreedor: r.acreedor || 0,
+      adjDebe: r.adjDebe || 0,
+      adjHaber: r.adjHaber || 0,
+      adjDeudor: r.adjDeudor || 0,
+      adjAcreedor: r.adjAcreedor || 0,
+      activo: r.activo || 0,
+      pasivo: r.pasivo || 0,
+      perdidaNaturaleza: r.perdidaNaturaleza || 0,
+      gananciaNaturaleza: r.gananciaNaturaleza || 0,
+      perdidaFuncion: r.perdidaFuncion || 0,
+      gananciaFuncion: r.gananciaFuncion || 0
+    }));
+
+    mainRows.push({
+      cta: '',
+      desc: 'UTILIDAD / PÉRDIDA DEL EJERCICIO',
+      debe: 0,
+      haber: 0,
+      deudor: 0,
+      acreedor: 0,
+      adjDebe: 0,
+      adjHaber: 0,
+      adjDeudor: 0,
+      adjAcreedor: 0,
+      activo: invUtilidadActivo,
+      pasivo: invUtilidadPasivo,
+      perdidaNaturaleza: natUtilidadPerdida,
+      gananciaNaturaleza: natUtilidadGanancia,
+      perdidaFuncion: funUtilidadPerdida,
+      gananciaFuncion: funUtilidadGanancia
+    });
+
+    exportSingleSheet({
+      sheetName: 'Bal. Comprobación',
+      title: `BALANCE DE COMPROBACIÓN - HOJA DE TRABAJO (NIVEL: ${digits} DÍGITOS)`,
+      columns: [
+        { header: 'CUENTA', key: 'cta', width: 12, alignment: 'center' },
+        { header: 'DENOMINACIÓN', key: 'desc', width: 35 },
+        { header: 'SUMAS DEBE', key: 'debe', width: 16, style: 'currency' },
+        { header: 'SUMAS HABER', key: 'haber', width: 16, style: 'currency' },
+        { header: 'SALDO DEUDOR', key: 'deudor', width: 16, style: 'currency' },
+        { header: 'SALDO ACREEDOR', key: 'acreedor', width: 16, style: 'currency' },
+        { header: 'AJUSTE DEBE', key: 'adjDebe', width: 14, style: 'currency' },
+        { header: 'AJUSTE HABER', key: 'adjHaber', width: 14, style: 'currency' },
+        { header: 'AJUSTADO DEUDOR', key: 'adjDeudor', width: 16, style: 'currency' },
+        { header: 'AJUSTADO ACREEDOR', key: 'adjAcreedor', width: 16, style: 'currency' },
+        { header: 'ACTIVO', key: 'activo', width: 16, style: 'currency' },
+        { header: 'PASIVO', key: 'pasivo', width: 16, style: 'currency' },
+        { header: 'PÉRDIDA NAT.', key: 'perdidaNaturaleza', width: 16, style: 'currency' },
+        { header: 'GANANCIA NAT.', key: 'gananciaNaturaleza', width: 16, style: 'currency' },
+        { header: 'PÉRDIDA FUN.', key: 'perdidaFuncion', width: 16, style: 'currency' },
+        { header: 'GANANCIA FUN.', key: 'gananciaFuncion', width: 16, style: 'currency' }
+      ],
+      rows: mainRows,
+      totals: {
+        cta: '',
+        desc: 'TOTALES FINALES',
+        debe: totals.debe,
+        haber: totals.haber,
+        deudor: totals.deudor,
+        acreedor: totals.acreedor,
+        adjDebe: totals.adjDebe,
+        adjHaber: totals.adjHaber,
+        adjDeudor: totals.adjDeudor,
+        adjAcreedor: totals.adjAcreedor,
+        activo: totals.activo + invUtilidadActivo,
+        pasivo: totals.pasivo + invUtilidadPasivo,
+        perdidaNaturaleza: totals.perdidaNaturaleza + natUtilidadPerdida,
+        gananciaNaturaleza: totals.gananciaNaturaleza + natUtilidadGanancia,
+        perdidaFuncion: totals.perdidaFuncion + funUtilidadPerdida,
+        gananciaFuncion: totals.gananciaFuncion + funUtilidadGanancia
+      }
+    }, `Balance_Comprobacion_${digits}_Digitos`);
+  };
+
   return (
     <div className="flex flex-col h-full bg-app-bg text-app-text animate-slide-up relative">
 
@@ -351,7 +433,7 @@ const HHTTView: React.FC = () => {
              </select>
            </div>
            <button onClick={() => window.print()} className="h-8 px-3 bg-app-bg border border-app-border rounded-lg hover:text-pld-blue transition-colors text-app-muted" title="Imprimir"><Printer size={14} /></button>
-           <button onClick={() => exportTableToXLSX('hhtt-table', 'Hoja_de_Trabajo_Balance_Comprobacion')} className="h-8 px-3 bg-app-bg border border-app-border rounded-lg hover:text-pld-blue transition-colors text-app-muted" title="Excel"><FileDown size={14} /></button>
+           <button onClick={handleExportExcel} className="h-8 px-3 bg-app-bg border border-app-border rounded-lg hover:text-pld-blue transition-colors text-app-muted" title="Excel"><FileDown size={14} /></button>
         </div>
       </div>
 

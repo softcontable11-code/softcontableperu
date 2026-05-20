@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Database, Search, FileDown, Printer } from 'lucide-react';
 import { DataTable } from './DataTable';
 import { useStore } from '../store';
-import { exportRawDataToXLSX } from '../utils/export';
+import { exportSingleSheet } from '../utils/excelExport';
 
 const DatosView: React.FC = () => {
   const { currentCompany, journal } = useStore();
@@ -28,23 +28,44 @@ const DatosView: React.FC = () => {
   }, [journal, query, sourceFilter]);
 
   const handleExport = () => {
-    const rows = filteredJournal.map(row => [
-      '12',
-      currentCompany.period || '2025',
-      row.source === 'COMPRA' ? '08' : row.source === 'VENTA' ? '14' : row.source === 'HONORARIO' ? '08' : '05',
-      row.asiento,
-      row.fecha,
-      row.glosa,
-      row.cta,
-      row.desc,
-      row.debe.toFixed(2),
-      row.haber.toFixed(2),
-      (row.debe - row.haber).toFixed(2),
-    ]);
-    exportRawDataToXLSX('Datos_SQL', [
-      ['MES', 'AÑO', 'LIBRO', 'ASIENTO', 'FECHA', 'GLOSA', 'CTA', 'DESCRIPCION', 'DEBE', 'HABER', 'DIFERENCIA'],
-      ...rows,
-    ]);
+    const rows = filteredJournal.map(row => ({
+      mes: '12',
+      anio: currentCompany.period || '2025',
+      libro: row.source === 'COMPRA' ? '08' : row.source === 'VENTA' ? '14' : row.source === 'HONORARIO' ? '08' : '05',
+      asiento: row.asiento,
+      fecha: row.fecha,
+      glosa: row.glosa,
+      cta: row.cta,
+      desc: row.desc,
+      debe: row.debe,
+      haber: row.haber,
+      diferencia: row.debe - row.haber
+    }));
+
+    exportSingleSheet({
+      sheetName: 'SQL Data',
+      title: 'SQL DATA EXPLORER - REGISTRO GENERAL DE TRANSACCIONES',
+      columns: [
+        { header: 'MES', key: 'mes', width: 10, alignment: 'center' },
+        { header: 'AÑO', key: 'anio', width: 10, alignment: 'center' },
+        { header: 'LIBRO', key: 'libro', width: 10, alignment: 'center' },
+        { header: 'ASIENTO', key: 'asiento', width: 14, alignment: 'center' },
+        { header: 'FECHA', key: 'fecha', width: 14, alignment: 'center' },
+        { header: 'GLOSA', key: 'glosa', width: 35 },
+        { header: 'CUENTA', key: 'cta', width: 12, alignment: 'center' },
+        { header: 'DESCRIPCIÓN', key: 'desc', width: 25 },
+        { header: 'DEBE (S/)', key: 'debe', width: 16, style: 'currency' },
+        { header: 'HABER (S/)', key: 'haber', width: 16, style: 'currency' },
+        { header: 'DIFERENCIA (S/)', key: 'diferencia', width: 16, style: 'currency' }
+      ],
+      rows,
+      totals: {
+        mes: 'TOTAL GENERAL',
+        debe: filteredJournal.reduce((acc, r) => acc + r.debe, 0),
+        haber: filteredJournal.reduce((acc, r) => acc + r.haber, 0),
+        diferencia: filteredJournal.reduce((acc, r) => acc + (r.debe - r.haber), 0)
+      }
+    }, 'SQL_Data_Transacciones');
   };
 
   const columns = [

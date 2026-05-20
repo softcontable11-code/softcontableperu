@@ -13,7 +13,6 @@ import {
 } from 'lucide-react';
 import { exportSingleSheet } from '../utils/excelExport';
 import { toast } from 'react-hot-toast';
-import * as XLSX from 'xlsx';
 
 const ActivosFijosView: React.FC = () => {
   const { fixedAssets, saveFixedAsset, deleteFixedAsset } = useStore();
@@ -68,32 +67,64 @@ const ActivosFijosView: React.FC = () => {
   };
 
   const handleExport = () => {
-    const data = filteredAssets.map(a => ({
-      'CÓDIGO': a.codigo,
-      'CUENTA': a.cuenta_activo,
-      'DESCRIPCIÓN': a.descripcion,
-      'MARCA': a.marca,
-      'MODELO': a.modelo,
-      'SERIE/PLACA': a.serie_placa,
-      'SALDO INICIAL': a.saldo_inicial,
-      'ADQUISICIONES': a.adquisiciones,
-      'MEJORAS': a.mejoras,
-      'RETIROS/BAJAS': a.retiros_bajas,
-      'OTROS AJUSTES': a.otros_ajustes,
-      'VALOR HISTÓRICO': calculateHistorico(a),
-      'FECHA ADQ': a.fecha_adquisicion,
-      'FECHA USO': a.fecha_uso,
-      'TASA %': a.tasa_depreciacion,
-      'DEP. ACUM ANTERIOR': a.deprec_acum_anterior,
-      'DEP. EJERCICIO': a.deprec_ejercicio,
-      'DEP. ACUMULADA': a.depreciacion_acumulada
+    const rows = filteredAssets.map(a => ({
+      codigo: a.codigo,
+      cuenta_activo: a.cuenta_activo,
+      descripcion: a.descripcion,
+      marca: a.marca,
+      modelo: a.modelo,
+      serie_placa: a.serie_placa,
+      saldo_inicial: a.saldo_inicial || 0,
+      adquisiciones: a.adquisiciones || 0,
+      mejoras: a.mejoras || 0,
+      retiros_bajas: a.retiros_bajas || 0,
+      otros_ajustes: a.otros_ajustes || 0,
+      valor_historico: calculateHistorico(a),
+      fecha_adquisicion: a.fecha_adquisicion,
+      fecha_uso: a.fecha_uso,
+      tasa_depreciacion: (a.tasa_depreciacion || 0) / 100,
+      deprec_acum_anterior: a.deprec_acum_anterior || 0,
+      deprec_ejercicio: a.deprec_ejercicio || 0,
+      depreciacion_acumulada: a.depreciacion_acumulada || 0
     }));
-    
-    const ws = XLSX.utils.json_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Formato 7.1");
-    XLSX.writeFile(wb, `SUNAT_F_7.1_Activos_Fijos.xlsx`);
-    toast.success('Excel Formato 7.1 exportado');
+
+    exportSingleSheet({
+      sheetName: 'Formato 7.1',
+      title: 'FORMATO 7.1: REGISTRO DE ACTIVOS FIJOS - DETALLE DE LOS MOVIMIENTOS',
+      columns: [
+        { header: 'CÓDIGO', key: 'codigo', width: 12, alignment: 'center' },
+        { header: 'CUENTA', key: 'cuenta_activo', width: 10, alignment: 'center' },
+        { header: 'DESCRIPCIÓN', key: 'descripcion', width: 30 },
+        { header: 'MARCA', key: 'marca', width: 15 },
+        { header: 'MODELO', key: 'modelo', width: 15 },
+        { header: 'SERIE/PLACA', key: 'serie_placa', width: 15 },
+        { header: 'SALDO INICIAL', key: 'saldo_inicial', width: 16, style: 'currency' },
+        { header: 'ADQUISICIONES', key: 'adquisiciones', width: 16, style: 'currency' },
+        { header: 'MEJORAS', key: 'mejoras', width: 16, style: 'currency' },
+        { header: 'RETIROS/BAJAS', key: 'retiros_bajas', width: 16, style: 'currency' },
+        { header: 'OTROS AJUSTES', key: 'otros_ajustes', width: 16, style: 'currency' },
+        { header: 'VALOR HISTÓRICO', key: 'valor_historico', width: 18, style: 'currency' },
+        { header: 'FECHA ADQ.', key: 'fecha_adquisicion', width: 14, alignment: 'center' },
+        { header: 'FECHA USO', key: 'fecha_uso', width: 14, alignment: 'center' },
+        { header: 'TASA %', key: 'tasa_depreciacion', width: 12, style: 'percent', alignment: 'right' },
+        { header: 'DEP. ACUM. ANTERIOR', key: 'deprec_acum_anterior', width: 18, style: 'currency' },
+        { header: 'DEP. EJERCICIO', key: 'deprec_ejercicio', width: 18, style: 'currency' },
+        { header: 'DEP. ACUMULADA', key: 'depreciacion_acumulada', width: 18, style: 'currency' }
+      ],
+      rows,
+      totals: {
+        codigo: 'TOTALES',
+        saldo_inicial: filteredAssets.reduce((acc, a) => acc + (a.saldo_inicial || 0), 0),
+        adquisiciones: filteredAssets.reduce((acc, a) => acc + (a.adquisiciones || 0), 0),
+        mejoras: filteredAssets.reduce((acc, a) => acc + (a.mejoras || 0), 0),
+        retiros_bajas: filteredAssets.reduce((acc, a) => acc + (a.retiros_bajas || 0), 0),
+        otros_ajustes: filteredAssets.reduce((acc, a) => acc + (a.otros_ajustes || 0), 0),
+        valor_historico: filteredAssets.reduce((acc, a) => acc + calculateHistorico(a), 0),
+        deprec_acum_anterior: filteredAssets.reduce((acc, a) => acc + (a.deprec_acum_anterior || 0), 0),
+        deprec_ejercicio: filteredAssets.reduce((acc, a) => acc + (a.deprec_ejercicio || 0), 0),
+        depreciacion_acumulada: filteredAssets.reduce((acc, a) => acc + (a.depreciacion_acumulada || 0), 0)
+      }
+    }, 'SUNAT_Formato_7.1_Activos_Fijos');
   };
 
   return (

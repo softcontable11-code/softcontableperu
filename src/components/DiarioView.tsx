@@ -1,7 +1,7 @@
 import React from 'react';
 import { Book, Printer, FileDown, Trash2, Edit } from 'lucide-react';
 import { useStore } from '../store';
-import { exportTableToXLSX } from '../utils/export';
+import { exportSingleSheet } from '../utils/excelExport';
 
 const DiarioView: React.FC = () => {
   const store = useStore();
@@ -120,6 +120,73 @@ const DiarioView: React.FC = () => {
     return dateStr;
   };
 
+  const handleExportExcel = () => {
+    const localCuoMap = new Map<string, string>();
+    let localCuoCounter = 1;
+    const getLocalStrictCuo = (asientoId: string) => {
+      if (!localCuoMap.has(asientoId)) {
+        localCuoMap.set(asientoId, `M${localCuoCounter.toString().padStart(5, '0')}`);
+        localCuoCounter++;
+      }
+      return localCuoMap.get(asientoId)!;
+    };
+
+    const rows = journal.map((row, i) => {
+      const parts = row.asiento.split('-');
+      const libro = parts.length >= 3 ? parts[0] : (row.source === 'COMPRA' ? '08' : row.source === 'VENTA' ? '14' : row.source === 'HONORARIO' ? '08' : '05');
+      const correlat = parts.length >= 3 ? parts[parts.length - 1] : (i+1).toString();
+      const strictCuo = getLocalStrictCuo(row.asiento);
+      
+      let refDoc = '-';
+      if (row.source === 'COMPRA') {
+        const p = store.purchases.find(x => x.registro === row.asiento);
+        if (p) refDoc = `${p.serie}-${p.numero}`;
+      } else if (row.source === 'VENTA') {
+        const s = store.sales.find(x => x.registro === row.asiento);
+        if (s) refDoc = `${s.serie}-${s.numero}`;
+      } else if (row.source === 'HONORARIO') {
+        const h = store.honorarios.find(x => x.registro === row.asiento);
+        if (h) refDoc = `${h.serie}-${h.numero}`;
+      }
+
+      return {
+        cuo: strictCuo,
+        fecha: formatDate(row.fecha),
+        glosa: row.glosa.toUpperCase(),
+        libro,
+        correlativo: correlat,
+        refDoc,
+        cta: row.cta,
+        desc: row.desc.toUpperCase(),
+        debe: row.debe || 0,
+        haber: row.haber || 0
+      };
+    });
+
+    exportSingleSheet({
+      sheetName: 'Libro Diario',
+      title: 'LIBRO DIARIO - FORMATO 5.1',
+      columns: [
+        { header: 'CUO', key: 'cuo', width: 14, alignment: 'center' },
+        { header: 'FECHA', key: 'fecha', width: 12, alignment: 'center' },
+        { header: 'GLOSA / DESCRIPCIÓN', key: 'glosa', width: 40 },
+        { header: 'LIBRO', key: 'libro', width: 8, alignment: 'center' },
+        { header: 'CORRELATIVO', key: 'correlativo', width: 14, alignment: 'center' },
+        { header: 'REF DOC', key: 'refDoc', width: 15, alignment: 'center' },
+        { header: 'CUENTA', key: 'cta', width: 10, alignment: 'center' },
+        { header: 'DENOMINACIÓN', key: 'desc', width: 35 },
+        { header: 'DEBE', key: 'debe', width: 16, style: 'currency' },
+        { header: 'HABER', key: 'haber', width: 16, style: 'currency' }
+      ],
+      rows,
+      totals: {
+        cuo: '', fecha: '', glosa: '', libro: '', correlativo: '', refDoc: '', cta: '', desc: 'TOTAL GENERAL',
+        debe: totalDebe,
+        haber: totalHaber
+      }
+    }, `Libro_Diario_${selectedAnio}_${selectedMes}`);
+  };
+
   return (
     <div className="flex flex-col h-full bg-app-bg text-app-text animate-slide-up relative">
 
@@ -165,7 +232,7 @@ const DiarioView: React.FC = () => {
               </select>
             </div>
            <button onClick={() => window.print()} className="h-8 px-3 bg-app-bg border border-app-border rounded-lg hover:text-pld-blue transition-colors flex items-center gap-1.5 text-[10px] font-bold text-app-muted" title="Imprimir"><Printer size={14} /> Imprimir</button>
-           <button onClick={() => exportTableToXLSX('diario-table', 'Libro_Diario_5_1')} className="h-8 px-3 bg-app-bg border border-app-border rounded-lg hover:text-pld-blue transition-colors flex items-center gap-1.5 text-[10px] font-bold text-app-muted" title="Exportar a Excel"><FileDown size={14} /> Excel</button>
+           <button onClick={handleExportExcel} className="h-8 px-3 bg-app-bg border border-app-border rounded-lg hover:text-pld-blue transition-colors flex items-center gap-1.5 text-[10px] font-bold text-app-muted" title="Exportar a Excel"><FileDown size={14} /> Excel</button>
         </div>
       </div>
 

@@ -11,9 +11,11 @@ import {
   Landmark,
   PiggyBank,
   Search,
-  PlusCircle
+  PlusCircle,
+  FileSpreadsheet
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { exportSingleSheet } from '../utils/excelExport';
 
 const DEFAULT_STRUCTURE: { cta: string; desc: string; section: SectionType }[] = [
   { cta: '101', desc: 'Caja y Bancos', section: 'ACTIVO_CORRIENTE' },
@@ -176,6 +178,36 @@ export default function BalanceInicialView() {
     }
   };
 
+  const handleExportExcel = () => {
+    const rows = items.map(item => ({
+      cta: item.cta,
+      desc: item.desc.toUpperCase(),
+      seccion: (item.section || 'ACTIVO_CORRIENTE').replace(/_/g, ' '),
+      debe: item.debe || 0,
+      haber: item.haber || 0
+    }));
+
+    exportSingleSheet({
+      sheetName: 'Balance Inicial',
+      title: `BALANCE INICIAL - ESTADO DE SITUACIÓN FINANCIERA (PERIODO: ${currentCompany?.period})`,
+      columns: [
+        { header: 'CUENTA', key: 'cta', width: 12, alignment: 'center' },
+        { header: 'DESCRIPCIÓN', key: 'desc', width: 45 },
+        { header: 'SECCIÓN', key: 'seccion', width: 25, alignment: 'center' },
+        { header: 'DEBE (S/)', key: 'debe', width: 18, style: 'currency' },
+        { header: 'HABER (S/)', key: 'haber', width: 18, style: 'currency' }
+      ],
+      rows,
+      totals: {
+        cta: 'TOTALES',
+        desc: totals.diff < 0.01 ? 'BALANCE CUADRADO' : `DESCUADRE: S/ ${totals.diff.toFixed(2)}`,
+        seccion: '',
+        debe: totals.activo,
+        haber: totals.pasivoPat
+      }
+    }, `Balance_Inicial_${currentCompany?.ruc || 'EMPRESA'}_${currentCompany?.period || 'AÑO'}`);
+  };
+
   const renderSection = (title: string, section: SectionType) => (
     <div className="mb-6">
       <div className="flex justify-between items-center bg-app-surface/50 border-b border-app-border px-3 py-1.5 mb-1">
@@ -263,6 +295,7 @@ export default function BalanceInicialView() {
 
         <div className="flex items-center gap-3">
           <button onClick={handleInitialize} className="h-10 px-4 text-app-muted hover:text-app-text text-[10px] font-black uppercase flex items-center gap-2 transition-colors">{isInitializing ? '...' : 'Reiniciar Formato'}</button>
+          <button onClick={handleExportExcel} className="h-10 px-4 bg-app-surface text-app-text border border-app-border rounded-xl text-[10px] font-black uppercase flex items-center gap-2 hover:bg-app-hover transition-colors shadow-sm"><FileSpreadsheet size={16} className="text-emerald-500" /> Excel</button>
           <button onClick={() => window.print()} className="h-10 px-4 bg-app-surface text-app-text border border-app-border rounded-xl text-[10px] font-black uppercase flex items-center gap-2 hover:bg-app-hover transition-colors shadow-sm"><Printer size={16} /> Imprimir</button>
           <button onClick={() => {
               const journalLines = items.filter(i => (i.debe || 0) > 0 || (i.haber || 0) > 0).map((i, index) => {

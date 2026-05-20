@@ -9,7 +9,7 @@ import {
   Download
 } from 'lucide-react';
 import { useStore } from '../store';
-import { exportTableToXLSX } from '../utils/export';
+import { exportSingleSheet } from '../utils/excelExport';
 
 /**
  * FORMATO 14.1: REGISTRO DE VENTAS E INGRESOS
@@ -118,6 +118,73 @@ const RegistroVentasView: React.FC = () => {
     });
   }, [filteredSales]);
 
+  const handleExportExcel = () => {
+    const rows = filteredSales.map(s => ({
+      registro: s.registro,
+      fecha: s.fecha,
+      fecVcto: s.fecVcto || '',
+      tipo_doc: s.tipo_doc,
+      serie: s.serie,
+      numero: s.numero,
+      doc_tipo: s.doc_tipo,
+      doc_num: s.doc_num,
+      nombre: s.nombre.toUpperCase(),
+      valExp: s.tipOperCode === '02' ? s.bi : 0,
+      ctaIngreso: s.ctaIngreso || '70111',
+      bi: s.bi,
+      exonerada: s.noGravada || 0,
+      inafecta: 0,
+      isc: s.isc || 0,
+      igv: s.igv,
+      otros: s.otros_tributos || 0,
+      ctaCargo: s.ctaCargo || '1212',
+      total: s.total,
+      tc: s.moneda === 'DOLARES' ? s.tc : ''
+    }));
+
+    exportSingleSheet({
+      sheetName: 'Reg. Ventas',
+      title: `REGISTRO DE VENTAS E INGRESOS - FORMATO 14.1 (PERIODO: ${MONTHS[periodoMes]} ${periodoAnio})`,
+      columns: [
+        { header: 'N° CORREL', key: 'registro', width: 14, alignment: 'center' },
+        { header: 'FECHA EMISIÓN', key: 'fecha', width: 14, alignment: 'center' },
+        { header: 'FECHA VCTO', key: 'fecVcto', width: 14, alignment: 'center' },
+        { header: 'TIPO DOC', key: 'tipo_doc', width: 10, alignment: 'center' },
+        { header: 'SERIE', key: 'serie', width: 10, alignment: 'center' },
+        { header: 'NÚMERO', key: 'numero', width: 12, alignment: 'center' },
+        { header: 'TIPO IDENT.', key: 'doc_tipo', width: 12, alignment: 'center' },
+        { header: 'NÚMERO IDENT.', key: 'doc_num', width: 15, alignment: 'center' },
+        { header: 'APELLIDOS Y NOMBRES / RAZÓN SOCIAL', key: 'nombre', width: 35 },
+        { header: 'VALOR EXP.', key: 'valExp', width: 14, style: 'currency' },
+        { header: 'CTA INGRESO', key: 'ctaIngreso', width: 12, alignment: 'center' },
+        { header: 'BASE IMPONIBLE', key: 'bi', width: 16, style: 'currency' },
+        { header: 'EXONERADA', key: 'exonerada', width: 14, style: 'currency' },
+        { header: 'INAFECTA', key: 'inafecta', width: 14, style: 'currency' },
+        { header: 'ISC', key: 'isc', width: 12, style: 'currency' },
+        { header: 'IGV', key: 'igv', width: 14, style: 'currency' },
+        { header: 'OTROS TRIBUTOS', key: 'otros', width: 14, style: 'currency' },
+        { header: 'CTA CARGO', key: 'ctaCargo', width: 12, alignment: 'center' },
+        { header: 'IMPORTE TOTAL', key: 'total', width: 16, style: 'currency' },
+        { header: 'T.C.', key: 'tc', width: 10, alignment: 'center' }
+      ],
+      rows,
+      totals: {
+        registro: '', fecha: '', fecVcto: '', tipo_doc: '', serie: '', numero: '', doc_tipo: '', doc_num: '', nombre: 'TOTAL GENERAL',
+        valExp: totals.exportacion,
+        ctaIngreso: '',
+        bi: totals.bi,
+        exonerada: totals.exonerada,
+        inafecta: 0,
+        isc: totals.isc,
+        igv: totals.igv,
+        otros: totals.otros,
+        ctaCargo: '',
+        total: totals.total,
+        tc: ''
+      }
+    }, `Registro_Ventas_${periodoAnio}_${String(periodoMes + 1).padStart(2, '0')}`);
+  };
+
   return (
     <div className="flex flex-col h-full bg-app-bg text-app-text animate-slide-up relative print:bg-white print:p-0">
 
@@ -168,7 +235,7 @@ const RegistroVentasView: React.FC = () => {
           <div className="h-4 w-px bg-app-border mx-1" />
 
           <button
-            onClick={() => exportTableToXLSX('registro-ventas-table', `Registro_Ventas_${periodoAnio}_${String(periodoMes + 1).padStart(2, '0')}`)}
+            onClick={handleExportExcel}
             className="h-8 px-3 bg-app-bg border border-app-border rounded-lg hover:text-pld-magenta transition-colors flex items-center gap-1.5 text-[10px] font-bold text-app-muted"
           >
             <Download size={14} /> Excel

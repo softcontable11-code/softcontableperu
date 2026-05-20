@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Printer, FileDown, Search, ChevronDown, ChevronRight } from 'lucide-react';
 import { useStore } from '../store';
-import { exportTableToXLSX } from '../utils/export';
+import { exportSingleSheet } from '../utils/excelExport';
 
 /**
  * LIBRO MAYOR (Formato 6.1)
@@ -72,6 +72,76 @@ const MayorView: React.FC = () => {
   const collapseAll = () => setCollapsedAccounts(new Set(accounts.map(a => a.code)));
   const expandAll = () => setCollapsedAccounts(new Set());
 
+  const handleExportExcel = () => {
+    const rows: any[] = [];
+    let grandDebe = 0;
+    let grandHaber = 0;
+
+    accounts.forEach(acc => {
+      const totalDeudor = acc.items.reduce((sum, item) => sum + item.deudor, 0);
+      const totalAcreedor = acc.items.reduce((sum, item) => sum + item.acreedor, 0);
+      
+      grandDebe += totalDeudor;
+      grandHaber += totalAcreedor;
+
+      rows.push({
+        cta: acc.code,
+        desc: `[${acc.code}] ${acc.desc.toUpperCase()}`,
+        fecha: '',
+        cuo: 'APERTURA',
+        debe: 0,
+        haber: 0,
+        saldo: 0
+      });
+
+      let running = 0;
+      acc.items.forEach(item => {
+        running += item.deudor - item.acreedor;
+        rows.push({
+          cta: '',
+          desc: item.glosa.toUpperCase(),
+          fecha: item.fecha,
+          cuo: item.correlativo,
+          debe: item.deudor || 0,
+          haber: item.acreedor || 0,
+          saldo: running
+        });
+      });
+
+      rows.push({
+        cta: '',
+        desc: `TOTAL CUENTA ${acc.code}`,
+        fecha: '',
+        cuo: '',
+        debe: totalDeudor,
+        haber: totalAcreedor,
+        saldo: totalDeudor - totalAcreedor
+      });
+      rows.push({ cta: '', desc: '', fecha: '', cuo: '', debe: '', haber: '', saldo: '' });
+    });
+
+    exportSingleSheet({
+      sheetName: 'Libro Mayor',
+      title: `LIBRO MAYOR - FORMATO 6.1 (PERIODO: ${monthName} ${currentYear})`,
+      columns: [
+        { header: 'CUENTA', key: 'cta', width: 14, alignment: 'center' },
+        { header: 'GLOSA / DETALLE', key: 'desc', width: 45 },
+        { header: 'FECHA', key: 'fecha', width: 12, alignment: 'center' },
+        { header: 'ASIENTO/CUO', key: 'cuo', width: 22, alignment: 'center' },
+        { header: 'DEBE', key: 'debe', width: 16, style: 'currency' },
+        { header: 'HABER', key: 'haber', width: 16, style: 'currency' },
+        { header: 'SALDO', key: 'saldo', width: 16, style: 'currency' }
+      ],
+      rows,
+      totals: {
+        cta: '', desc: 'TOTAL GENERAL MAYOR', fecha: '', cuo: '',
+        debe: grandDebe,
+        haber: grandHaber,
+        saldo: grandDebe - grandHaber
+      }
+    }, `Libro_Mayor_6_1_${currentYear}_${dominantMonth}`);
+  };
+
   return (
     <div className="flex flex-col h-full bg-app-bg text-app-text animate-slide-up relative">
 
@@ -105,7 +175,7 @@ const MayorView: React.FC = () => {
            <button onClick={collapseAll} className="h-8 text-[9px] font-bold uppercase bg-app-bg border border-app-border px-3 rounded-lg hover:text-pld-blue transition-colors">Colapsar</button>
            <button onClick={expandAll} className="h-8 text-[9px] font-bold uppercase bg-app-bg border border-app-border px-3 rounded-lg hover:text-pld-blue transition-colors">Expandir</button>
            <button onClick={() => window.print()} className="h-8 px-3 bg-app-bg border border-app-border rounded-lg hover:text-pld-blue transition-colors text-app-muted" title="Imprimir"><Printer size={14} /></button>
-           <button onClick={() => exportTableToXLSX('mayor-container', 'Libro_Mayor_6_1')} className="h-8 px-3 bg-app-bg border border-app-border rounded-lg hover:text-pld-blue transition-colors text-app-muted" title="Excel"><FileDown size={14} /></button>
+           <button onClick={handleExportExcel} className="h-8 px-3 bg-app-bg border border-app-border rounded-lg hover:text-pld-blue transition-colors text-app-muted" title="Excel"><FileDown size={14} /></button>
         </div>
       </div>
 

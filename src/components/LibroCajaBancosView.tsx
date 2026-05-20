@@ -10,8 +10,8 @@ import {
   Download,
   AlertCircle
 } from 'lucide-react';
-import * as XLSX from 'xlsx';
 import { toast } from 'react-hot-toast';
+import { exportSingleSheet } from '../utils/excelExport';
 
 /**
  * LIBRO CAJA Y BANCOS
@@ -201,24 +201,72 @@ const LibroCajaBancosView: React.FC = () => {
   }, [rows]);
 
   // ─── Export Excel ───
-  const handleExport = () => {
-    const data = rows.map(r => {
-      const base: Record<string, unknown> = {
-        'N°': r.correlativo ?? '',
-        'Fecha': r.isFirstLine ? r.fecha : '',
-        'Descripción': r.isFirstLine ? r.glosa : '',
-        'Cta. Código': r.ctaCodigo,
-        'Cta. Denominación': r.ctaDenom,
-        'Deudor': r.deudor || '',
-        'Acreedor': r.acreedor || '',
-      };
-      return base;
-    });
-    const ws = XLSX.utils.json_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, `Formato ${formato}`);
-    XLSX.writeFile(wb, `Libro_CajaBancos_${formato}_${periodoAnio}_${String(periodoMes + 1).padStart(2, '0')}.xlsx`);
-    toast.success('Excel exportado correctamente');
+  const handleExportExcel = () => {
+    if (formato === '1.1') {
+      const rowsFormatted = rows.map(r => ({
+        correlativo: r.correlativo ?? '',
+        fecha: r.isFirstLine ? r.fecha : '',
+        glosa: r.isFirstLine ? r.glosa.toUpperCase() : '',
+        ctaCodigo: r.ctaCodigo,
+        ctaDenom: r.ctaDenom.toUpperCase(),
+        deudor: r.deudor || 0,
+        acreedor: r.acreedor || 0
+      }));
+
+      exportSingleSheet({
+        sheetName: 'Formato 1.1',
+        title: `LIBRO CAJA Y BANCOS - DETALLE DE MOVIMIENTOS DE EFECTIVO (PERIODO: ${MONTHS[periodoMes]} ${periodoAnio})`,
+        columns: [
+          { header: 'N° CORREL.', key: 'correlativo', width: 14, alignment: 'center' },
+          { header: 'FECHA', key: 'fecha', width: 12, alignment: 'center' },
+          { header: 'DESCRIPCIÓN DE LA OPERACIÓN', key: 'glosa', width: 40 },
+          { header: 'CÓDIGO CTA', key: 'ctaCodigo', width: 12, alignment: 'center' },
+          { header: 'DENOMINACIÓN CTA', key: 'ctaDenom', width: 35 },
+          { header: 'DEUDOR (INGRESOS)', key: 'deudor', width: 16, style: 'currency' },
+          { header: 'ACREEDOR (SALIDAS)', key: 'acreedor', width: 16, style: 'currency' }
+        ],
+        rows: rowsFormatted,
+        totals: {
+          correlativo: '', fecha: '', glosa: 'TOTAL GENERAL', ctaCodigo: '', ctaDenom: '',
+          deudor: totals.deudor,
+          acreedor: totals.acreedor
+        }
+      }, `Libro_CajaBancos_1_1_${periodoAnio}_${String(periodoMes + 1).padStart(2, '0')}`);
+    } else {
+      const rowsFormatted = rows.map(r => ({
+        correlativo: r.correlativo ?? '',
+        fecha: r.isFirstLine ? r.fecha : '',
+        medioPago: r.isFirstLine ? (r.medioPago || '') : '',
+        glosa: r.isFirstLine ? r.glosa.toUpperCase() : '',
+        razonSocial: r.isFirstLine ? (r.razonSocial || '').toUpperCase() : '',
+        ctaCodigo: r.ctaCodigo,
+        ctaDenom: r.ctaDenom.toUpperCase(),
+        deudor: r.deudor || 0,
+        acreedor: r.acreedor || 0
+      }));
+
+      exportSingleSheet({
+        sheetName: 'Formato 1.2',
+        title: `LIBRO CAJA Y BANCOS - DETALLE DE MOVIMIENTOS DE CUENTA CORRIENTE (PERIODO: ${MONTHS[periodoMes]} ${periodoAnio})`,
+        columns: [
+          { header: 'N° CORREL.', key: 'correlativo', width: 14, alignment: 'center' },
+          { header: 'FECHA', key: 'fecha', width: 12, alignment: 'center' },
+          { header: 'M. PAGO', key: 'medioPago', width: 10, alignment: 'center' },
+          { header: 'DESCRIPCIÓN DE LA OPERACIÓN', key: 'glosa', width: 30 },
+          { header: 'APELLIDOS Y NOMBRES / RAZÓN SOCIAL', key: 'razonSocial', width: 30 },
+          { header: 'CÓDIGO CTA', key: 'ctaCodigo', width: 12, alignment: 'center' },
+          { header: 'DENOMINACIÓN CTA', key: 'ctaDenom', width: 30 },
+          { header: 'DEUDOR (INGRESOS)', key: 'deudor', width: 16, style: 'currency' },
+          { header: 'ACREEDOR (SALIDAS)', key: 'acreedor', width: 16, style: 'currency' }
+        ],
+        rows: rowsFormatted,
+        totals: {
+          correlativo: '', fecha: '', medioPago: '', glosa: 'TOTAL GENERAL', razonSocial: '', ctaCodigo: '', ctaDenom: '',
+          deudor: totals.deudor,
+          acreedor: totals.acreedor
+        }
+      }, `Libro_CajaBancos_1_2_${periodoAnio}_${String(periodoMes + 1).padStart(2, '0')}`);
+    }
   };
 
   const formatoLabel = formato === '1.1'
@@ -303,7 +351,7 @@ const LibroCajaBancosView: React.FC = () => {
           <div className="h-4 w-px bg-app-border mx-1" />
 
           <button
-            onClick={handleExport}
+            onClick={handleExportExcel}
             className="h-8 px-3 bg-app-bg border border-app-border rounded-lg hover:text-indigo-600 transition-colors flex items-center gap-1.5 text-[10px] font-bold text-app-muted"
           >
             <Download size={14} /> Excel

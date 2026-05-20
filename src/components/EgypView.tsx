@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { TrendingUp, Printer, FileDown, Layers, Layout } from 'lucide-react';
 import { useStore } from '../store';
-import { exportRawDataToXLSX } from '../utils/export';
+import { exportSingleSheet } from '../utils/excelExport';
 
 const EgypLine: React.FC<{ label: string; value: number; indent?: boolean; bold?: boolean; isTotal?: boolean; isNet?: boolean }> = ({ label, value, indent, bold, isTotal, isNet }) => (
   <div className={`flex justify-between text-[11px] py-1 border-b border-app-border/50 ${indent ? 'pl-8' : ''} ${isTotal ? 'border-t-2 border-app-border pt-2' : ''} ${isNet ? 'bg-pld-blue/10 p-2 rounded border-none mt-4 ring-1 ring-pld-blue/20' : ''}`}>
@@ -80,51 +80,54 @@ const EgypView: React.FC = () => {
   const currentResultAntes = viewMode === 'FUNCION' ? fResultAntesDePartIR : nResultAntesDePartIR;
 
   const handleExport = () => {
-    const title = `ESTADO DE RESULTADOS INTEGRALES (POR ${viewMode === 'FUNCION' ? 'FUNCIÓN' : 'NATURALEZA'})`;
-    const data = viewMode === 'FUNCION' ? [
-      ['RUBRO', 'MONTO S/'],
-      ['VENTAS / INGRESOS OPERACIONALES', fVentasBrutas.toFixed(2)],
-      ['OTROS INGRESOS DE GESTION', fOtrosIngresos.toFixed(2)],
-      ['TOTAL INGRESOS BRUTOS', fTotalIngresos.toFixed(2)],
-      [],
-      ['COSTO DE VENTAS', fCostoVentas.toFixed(2)],
-      ['UTILIDAD BRUTA', fUtilidadBruta.toFixed(2)],
-      [],
-      ['GASTOS ADMINISTRATIVOS', fGastosAdmin.toFixed(2)],
-      ['GASTOS DE VENTAS', fGastosVentas.toFixed(2)],
-      ['UTILIDAD OPERATIVA', fUtilidadOperativa.toFixed(2)],
+    const dataRows = viewMode === 'FUNCION' ? [
+      { concepto: 'VENTAS / INGRESOS OPERACIONALES', importe: fVentasBrutas },
+      { concepto: 'OTROS INGRESOS DE GESTIÓN', importe: fOtrosIngresos },
+      { concepto: 'TOTAL INGRESOS BRUTOS', importe: fTotalIngresos },
+      { concepto: 'COSTO DE VENTAS', importe: -fCostoVentas },
+      { concepto: 'UTILIDAD BRUTA', importe: fUtilidadBruta },
+      { concepto: 'GASTOS ADMINISTRATIVOS', importe: -fGastosAdmin },
+      { concepto: 'GASTOS DE VENTAS', importe: -fGastosVentas },
+      { concepto: 'UTILIDAD OPERATIVA', importe: fUtilidadOperativa }
     ] : [
-      ['RUBRO', 'MONTO S/'],
-      ['VENTAS NETAS', nVentasBrutas.toFixed(2)],
-      ['COMPRAS DE MERCADERIAS', nCompras.toFixed(2)],
-      ['VARIACION DE MERCADERIAS', nVariacionInventario.toFixed(2)],
-      ['MARGEN COMERCIAL', nMargenComercial.toFixed(2)],
-      [],
-      ['VARIACION DE LA PRODUCCION ALMACENADA', nVariacionExist.toFixed(2)],
-      ['GASTOS DE SERVICIOS PRESTADOS POR TERCEROS', nServiciosTerceros.toFixed(2)],
-      ['VALOR AGREGADO', nValorAgregado.toFixed(2)],
-      [],
-      ['GASTOS DE PERSONAL, DIRECTORES Y GERENTES', nGastosPersonal.toFixed(2)],
-      ['GASTOS POR TRIBUTOS', nTributos.toFixed(2)],
-      ['EXCEDENTE (INSUFICIENCIA) BRUTO DE EXPLOTACION', nExcedenteBruto.toFixed(2)],
+      { concepto: 'VENTAS NETAS', importe: nVentasBrutas },
+      { concepto: '(-) COMPRAS DE MERCADERÍAS', importe: -nCompras },
+      { concepto: '(-) VARIACIÓN DE MERCADERÍAS (CTA 61)', importe: -nVariacionInventario },
+      { concepto: 'MARGEN COMERCIAL', importe: nMargenComercial },
+      { concepto: 'VARIACIÓN DE LA PRODUCCIÓN ALMACENADA', importe: nVariacionExist },
+      { concepto: 'PRODUCCIÓN DE ACTIVO INMOVILIZADO', importe: nProduccionInmov },
+      { concepto: '(-) GASTOS DE SERVICIOS PRESTADOS POR TERCEROS', importe: -nServiciosTerceros },
+      { concepto: 'VALOR AGREGADO', importe: nValorAgregado },
+      { concepto: '(-) GASTOS DE PERSONAL, DIRECTORES Y GERENTES', importe: -nGastosPersonal },
+      { concepto: '(-) GASTOS POR TRIBUTOS', importe: -nTributos },
+      { concepto: 'EXCEDENTE BRUTO DE EXPLOTACIÓN', importe: nExcedenteBruto },
+      { concepto: '(-) OTROS GASTOS DE GESTIÓN', importe: -nOtrosGastosGest },
+      { concepto: '(-) VALUACIÓN Y DETERIORO DE ACTIVOS Y PROV.', importe: -nValuacionDeterioro },
+      { concepto: 'OTROS INGRESOS DE GESTIÓN', importe: nOtrosIngresos },
+      { concepto: 'UTILIDAD OPERATIVA (POR NATURALEZA)', importe: nUtilidadOperativa }
     ];
 
-    exportRawDataToXLSX(`Estado_Resultados_${viewMode}`, [
-      [title],
-      ['EMPRESA:', currentCompany.name],
-      ['RUC:', currentCompany.ruc],
-      ['PERIODO:', currentCompany.period || '2025'],
-      [],
-      ...data,
-      [],
-      ['INGRESOS FINANCIEROS', ingresosFinancieros.toFixed(2)],
-      ['GASTOS FINANCIEROS', gastosFinancieros.toFixed(2)],
-      ['RESULTADO ANTES DE PART. E IR', currentResultAntes.toFixed(2)],
-      ['(-) PARTICIPACION DE TRABAJADORES (CTA 87)', participacionTrabajadores.toFixed(2)],
-      ['(-) IMPUESTO A LA RENTA (CTA 88)', impuestoRenta.toFixed(2)],
-      [],
-      ['UTILIDAD (PERDIDA) NETA DEL EJERCICIO', currentUtilidadNeta.toFixed(2)]
-    ]);
+    dataRows.push(
+      { concepto: 'INGRESOS FINANCIEROS', importe: ingresosFinancieros },
+      { concepto: '(-) GASTOS FINANCIEROS', importe: -gastosFinancieros },
+      { concepto: 'RESULTADO ANTES DE PART. E IR', importe: currentResultAntes },
+      { concepto: '(-) PARTICIPACIÓN DE TRABAJADORES (CTA 87)', importe: -participacionTrabajadores },
+      { concepto: '(-) IMPUESTO A LA RENTA (CTA 88)', importe: -impuestoRenta }
+    );
+
+    exportSingleSheet({
+      sheetName: `Resultados ${viewMode === 'FUNCION' ? 'Función' : 'Naturaleza'}`,
+      title: `ESTADO DE RESULTADOS INTEGRALES (POR ${viewMode === 'FUNCION' ? 'FUNCIÓN' : 'NATURALEZA'})`,
+      columns: [
+        { header: 'CONCEPTO', key: 'concepto', width: 50 },
+        { header: 'IMPORTE S/', key: 'importe', width: 22, style: 'currency' }
+      ],
+      rows: dataRows,
+      totals: {
+        concepto: 'UTILIDAD (PÉRDIDA) NETA DEL EJERCICIO',
+        importe: currentUtilidadNeta
+      }
+    }, `Estado_Resultados_${viewMode}`);
   };
 
   return (

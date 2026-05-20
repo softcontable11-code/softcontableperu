@@ -12,8 +12,8 @@ import {
   Wallet,
   Calculator
 } from 'lucide-react';
-import * as XLSX from 'xlsx';
 import toast from 'react-hot-toast';
+import { exportSingleSheet } from '../utils/excelExport';
 
 const MONTHS = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
@@ -256,24 +256,46 @@ const CajaDashboard: React.FC = () => {
 
   const format = (n: number) => n.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-  const exportExcel = () => {
-    const data = cajaMonthlyData.map(m => ({
-      Mes: m.name,
-      'Saldo Inicial': m.saldoInicial,
-      'Ingresos 12': m.ingresos.cta12,
-      'Total Ingresos': m.ingresos.total,
-      'Saldo Disponible': m.saldoDisponible,
-      'Egresos 42': m.egresos.cta42,
-      'Impuestos (IGV+Renta)': m.egresos.igv + m.egresos.renta,
-      'Total Egresos': m.egresos.total,
-      'Saldo Final': m.saldoFinal
+  const handleExportExcel = () => {
+    const rowsFormatted = cajaMonthlyData.map(m => ({
+      Mes: m.name.toUpperCase(),
+      saldoInicial: m.saldoInicial,
+      ingresos12: m.ingresos.cta12,
+      totalIngresos: m.ingresos.total,
+      saldoDisponible: m.saldoDisponible,
+      egresos42: m.egresos.cta42,
+      impuestos: m.egresos.igv + m.egresos.renta,
+      totalEgresos: m.egresos.total,
+      saldoFinal: m.saldoFinal
     }));
-    
-    const ws = XLSX.utils.json_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Caja Fiscal");
-    XLSX.writeFile(wb, `Flujo_Caja_${currentCompany.ruc}_${currentPeriod}.xlsx`);
-    toast.success('Excel de Caja exportado');
+
+    exportSingleSheet({
+      sheetName: 'Caja Fiscal',
+      title: `FLUJO DE CAJA FISCAL - CASH FLOW (PERIODO: ${currentPeriod})`,
+      columns: [
+        { header: 'MES', key: 'Mes', width: 12, alignment: 'center' },
+        { header: 'SALDO INICIAL', key: 'saldoInicial', width: 18, style: 'currency' },
+        { header: 'INGRESOS CTA 12', key: 'ingresos12', width: 18, style: 'currency' },
+        { header: 'TOTAL INGRESOS', key: 'totalIngresos', width: 18, style: 'currency' },
+        { header: 'SALDO DISPONIBLE', key: 'saldoDisponible', width: 20, style: 'currency' },
+        { header: 'EGRESOS CTA 42', key: 'egresos42', width: 18, style: 'currency' },
+        { header: 'IMPUESTOS (IGV+RENTA)', key: 'impuestos', width: 22, style: 'currency' },
+        { header: 'TOTAL EGRESOS', key: 'totalEgresos', width: 18, style: 'currency' },
+        { header: 'SALDO FINAL', key: 'saldoFinal', width: 20, style: 'currency' }
+      ],
+      rows: rowsFormatted,
+      totals: {
+        Mes: 'TOTAL GENERAL',
+        saldoInicial: cajaMonthlyData[0].saldoInicial,
+        ingresos12: cajaMonthlyData.reduce((a, b) => a + b.ingresos.cta12, 0),
+        totalIngresos: totals.ingresos,
+        saldoDisponible: cajaMonthlyData[11].saldoDisponible,
+        egresos42: cajaMonthlyData.reduce((a, b) => a + b.egresos.cta42, 0),
+        impuestos: cajaMonthlyData.reduce((a, b) => a + (b.egresos.igv + b.egresos.renta), 0),
+        totalEgresos: totals.egresos,
+        saldoFinal: cajaMonthlyData[11].saldoFinal
+      }
+    }, `Flujo_Caja_${currentCompany.ruc}_${currentPeriod}`);
   };
 
   return (
@@ -289,7 +311,7 @@ const CajaDashboard: React.FC = () => {
           <p className="text-xs font-bold text-app-muted mt-1 uppercase tracking-widest">{currentCompany.name} • {currentPeriod}</p>
         </div>
         <div className="flex gap-3">
-          <button onClick={exportExcel} className="p-2.5 bg-emerald-500 text-white rounded-xl shadow-lg shadow-emerald-500/20 hover:scale-105 transition-all flex items-center gap-2 text-[10px] font-black uppercase">
+          <button onClick={handleExportExcel} className="p-2.5 bg-emerald-500 text-white rounded-xl shadow-lg shadow-emerald-500/20 hover:scale-105 transition-all flex items-center gap-2 text-[10px] font-black uppercase">
             <FileSpreadsheet size={16} /> Exportar Caja
           </button>
           <button onClick={() => window.print()} className="p-2.5 bg-app-surface border border-app-border text-app-text rounded-xl shadow-sm hover:scale-105 transition-all flex items-center gap-2 text-[10px] font-black uppercase">
