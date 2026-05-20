@@ -270,6 +270,7 @@ function ensureColumnExists(tableName, colName, colType) {
 
 // Migraciones generales para sincronizar la base de datos de Railway con todos los campos del sistema local
 ensureColumnExists('workspaces', 'businessType', "TEXT DEFAULT 'COMERCIAL'");
+ensureColumnExists('workspaces', 'annualIncomeUIT', 'REAL DEFAULT 0');
 
 ensureColumnExists('products', 'type_existence', 'TEXT');
 ensureColumnExists('products', 'sale_price', 'REAL DEFAULT 0');
@@ -410,15 +411,16 @@ const dbManager = {
     saveWorkspace: (w, userId) => {
         const stmt = db.prepare(`
             INSERT OR REPLACE INTO workspaces 
-            (ruc, name, regimenTributario, location, address, support, period, logoBase64, sol_user, sol_pass, sunatClientId, sunatClientSecret, user_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (ruc, name, regimenTributario, location, address, support, period, logoBase64, sol_user, sol_pass, sunatClientId, sunatClientSecret, user_id, annualIncomeUIT)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
         stmt.run(
             w.ruc, w.name, w.regimenTributario, w.location, w.address,
             w.support, w.period, w.logoBase64,
             encrypt(w.sol_user), encrypt(w.sol_pass),
             encrypt(w.sunatClientId), encrypt(w.sunatClientSecret),
-            userId
+            userId,
+            Number(w.annualIncomeUIT || 0)
         );
     },
 

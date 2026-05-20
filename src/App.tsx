@@ -3,6 +3,7 @@ import { generateMassiveWorkbook } from './utils/massiveExport';
 import { useStore } from './store';
 import { runMigration } from './utils/migrationRunner';
 import { toast, Toaster } from 'react-hot-toast';
+import { isTabEnabled } from './utils/tributarioRules';
 
 
 // Lazy-loaded views
@@ -185,7 +186,7 @@ function findGroupForTab(tabId: string): string | null {
 // ─── App Component ───
 
 const App: React.FC = () => {
-  const { activeTab, setActiveTab, theme, toggleTheme, buzonMensajes, setShowCompanyConfig } = useStore();
+  const { activeTab, setActiveTab, theme, toggleTheme, buzonMensajes, setShowCompanyConfig, currentCompany } = useStore();
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('softcontable_token'));
 
   const handleOpenCompanyConfig = () => {
@@ -321,6 +322,12 @@ const App: React.FC = () => {
     if (group) setExpandedGroups(new Set([group]));
   }, [activeTab]);
 
+  useEffect(() => {
+    if (!isTabEnabled(activeTab, currentCompany)) {
+      setActiveTab('EMPRESA');
+    }
+  }, [activeTab, currentCompany, setActiveTab]);
+
   if (isInitializing) {
     return (
       <div className="h-screen w-screen bg-black flex flex-col items-center justify-center text-white p-10 text-center">
@@ -378,9 +385,16 @@ const App: React.FC = () => {
   const unreadBuzon = buzonMensajes?.filter(m => m.estado === 'no_leido').length ?? 0;
 
 
+  const filteredGroups = React.useMemo(() => {
+    return SIDEBAR_GROUPS.map(group => {
+      const items = group.items.filter(item => isTabEnabled(item.id, currentCompany));
+      return { ...group, items };
+    }).filter(group => group.items.length > 0);
+  }, [currentCompany]);
+
   const groupHasActiveTab = (group: TabGroup) => group.items.some(item => item.id === activeTab);
 
-  const allTabs = SIDEBAR_GROUPS.flatMap(g => g.items);
+  const allTabs = filteredGroups.flatMap(g => g.items);
   const searchResults = searchQuery 
     ? allTabs.filter(t => t.label.toLowerCase().includes(searchQuery.toLowerCase()))
     : (isSearchFocused ? allTabs : []);
@@ -412,7 +426,7 @@ const App: React.FC = () => {
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto overflow-x-hidden py-4 custom-scrollbar flex flex-col gap-1 w-full px-2 bg-app-surface">
-          {SIDEBAR_GROUPS.map((group) => {
+          {filteredGroups.map((group) => {
             const isExpanded = expandedGroups.has(group.groupLabel) && !isSidebarCollapsed;
             const isActiveGroup = groupHasActiveTab(group);
             const isSingleItem = group.items.length === 1;

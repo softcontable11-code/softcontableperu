@@ -330,6 +330,9 @@ if (!wsCols.some(col => col.name === 'sunatClientSecret')) {
 if (!wsCols.some(col => col.name === 'businessType')) {
   db.exec("ALTER TABLE workspaces ADD COLUMN businessType TEXT DEFAULT 'COMERCIAL'");
 }
+if (!wsCols.some(col => col.name === 'annualIncomeUIT')) {
+  db.exec("ALTER TABLE workspaces ADD COLUMN annualIncomeUIT REAL DEFAULT 0");
+}
 
 const prodCols = db.prepare("PRAGMA table_info(products)").all();
 if (!prodCols.some(col => col.name === 'type_existence')) {
@@ -450,14 +453,15 @@ const dbManager = {
   saveWorkspace: (w) => {
     const stmt = db.prepare(`
       INSERT OR REPLACE INTO workspaces 
-      (ruc, name, regimenTributario, location, address, support, period, logoBase64, sol_user, sol_pass, sunatClientId, sunatClientSecret)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (ruc, name, regimenTributario, location, address, support, period, logoBase64, sol_user, sol_pass, sunatClientId, sunatClientSecret, annualIncomeUIT)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     stmt.run(
       w.ruc, w.name, w.regimenTributario, w.location, w.address, 
       w.support, w.period, w.logoBase64, 
       encrypt(w.sol_user), encrypt(w.sol_pass),
-      encrypt(w.sunatClientId), encrypt(w.sunatClientSecret)
+      encrypt(w.sunatClientId), encrypt(w.sunatClientSecret),
+      Number(w.annualIncomeUIT || 0)
     );
   },
 
@@ -653,15 +657,16 @@ const dbManager = {
       // 1. Guardar/Actualizar Workspace
       const stmtWS = db.prepare(`
         INSERT OR REPLACE INTO workspaces 
-        (ruc, name, regimenTributario, location, address, support, period, logoBase64, sol_user, sol_pass, sunatClientId, sunatClientSecret, businessType)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (ruc, name, regimenTributario, location, address, support, period, logoBase64, sol_user, sol_pass, sunatClientId, sunatClientSecret, businessType, annualIncomeUIT)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
       stmtWS.run(
         ruc, w.name, w.regimenTributario || 'RG', w.location || '', w.address || '', 
         w.support || '', w.period || '', w.logoBase64 || null, 
         encrypt(w.sol_user), encrypt(w.sol_pass),
         encrypt(w.sunatClientId), encrypt(w.sunatClientSecret),
-        w.businessType || 'COMERCIAL'
+        w.businessType || 'COMERCIAL',
+        Number(w.annualIncomeUIT || 0)
       );
 
       // 2. Limpiar datos antiguos

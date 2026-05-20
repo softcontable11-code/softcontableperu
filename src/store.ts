@@ -311,6 +311,7 @@ export interface CompanyData {
   sol_pass?: string;
   sunatClientId?: string;
   sunatClientSecret?: string;
+  annualIncomeUIT?: number;
 }
 
 export interface BuzonMensaje {
@@ -547,7 +548,7 @@ function buildJournalEntries(source: 'COMPRA' | 'VENTA' | 'HONORARIO' | 'ASIENTO
 }
 
 const EMPTY_WORKSPACE: WorkspaceState = {
-  currentCompany: { name: '', ruc: '', regimenTributario: 'RG', location: '', address: '', support: '', period: '', businessType: 'COMERCIAL' },
+  currentCompany: { name: '', ruc: '', regimenTributario: 'RG', location: '', address: '', support: '', period: '', businessType: 'COMERCIAL', annualIncomeUIT: 0 },
   purchases: [], sales: [], journal: [], asientos: [], entities: [], maintenanceRecords: [], costs: [], honorarios: [], plan: INITIAL_PLAN, hhttAdjustments: {}, movimientosData: [], glosasHabituales: [],
   products: [], inventoryMovements: [], cashMovements: [], fixedAssets: [], employees: [],
   balanceInicial: []

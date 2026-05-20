@@ -4,10 +4,11 @@ import {
   Building2, Hash, MapPin, MapPinHouse, MessageCircleMore,
   Loader2, CheckCircle2, CalendarDays, Upload, Trash2,
   Shield, Settings, BookText, Tag, ShoppingCart, ReceiptText,
-  ArrowRight, Clock, FileText, Users, ChevronRight, Wallet, Scale
+  ArrowRight, Clock, FileText, Users, ChevronRight, Wallet, Scale,
+  AlertCircle, Calculator
 } from 'lucide-react';
 import { useStore, type RegimenCode } from '../store';
-import { REGIMENES_TRIBUTARIOS } from '../constants/tributario';
+import { REGIMENES_TRIBUTARIOS, getUIT } from '../constants/tributario';
 import * as apiService from '../services/apiService';
 
 // ─── Helpers ───
@@ -310,8 +311,8 @@ const EmpresaView: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Row 3: Period, Regimen & Business Type */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Row 3: Period, Regimen, Business Type & UIT */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                   <div className="flex flex-col space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-app-muted flex items-center gap-2">
                       <CalendarDays size={12} className="text-pld-blue" /> Periodo Contable
@@ -348,22 +349,214 @@ const EmpresaView: React.FC = () => {
                       <option value="SERVICIOS">SERVICIOS</option>
                     </select>
                   </div>
+                  <div className="flex flex-col space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-app-muted flex items-center gap-2">
+                      <Calculator size={12} className="text-pld-blue" /> Ingresos Anuales (UIT)
+                    </label>
+                    <div className="relative flex items-center">
+                      <input 
+                        type="number" 
+                        min="0"
+                        step="0.1"
+                        value={currentCompany.annualIncomeUIT || 0}
+                        onChange={(e) => updateCompany({ annualIncomeUIT: Math.max(0, parseFloat(e.target.value) || 0) })}
+                        className="w-full text-sm font-bold pr-12" 
+                      />
+                      <span className="absolute right-3 text-[10px] font-bold text-app-muted select-none">
+                        UIT
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-app-muted">
+                      Equiv: S/ {((currentCompany.annualIncomeUIT || 0) * getUIT(currentCompany.period || '2026')).toLocaleString('es-PE', { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
                 </div>
 
-                {/* Regimen Info */}
+                {/* Regimen Info & Dynamic Obligations */}
                 {(() => {
-                  const regimen = REGIMENES_TRIBUTARIOS.find(r => r.code === (currentCompany.regimenTributario || 'RG'));
-                  if (!regimen) return null;
+                  const r = currentCompany.regimenTributario || 'RG';
+                  const s = currentCompany.businessType || 'COMERCIAL';
+                  const i = Number(currentCompany.annualIncomeUIT || 0);
+
+                  const getObligationsList = () => {
+                    if (r === 'NRUS') {
+                      return {
+                        message: "El Nuevo RUS no exige llevar libros contables. Solo conserva tus comprobantes de pago de compras y ventas.",
+                        isRed: true,
+                        books: [
+                          { name: 'Registro de Ventas e Ingresos', required: false },
+                          { name: 'Registro de Compras', required: false },
+                          { name: 'Libro Diario / Simplificado', required: false },
+                          { name: 'Libro Mayor', required: false },
+                          { name: 'Libro Caja y Bancos', required: false },
+                          { name: 'Libro de Inventarios y Balances', required: false },
+                          { name: 'Registro de Activos Fijos', required: false },
+                          { name: 'Registro de Costos', required: false },
+                          { name: 'Kárdex de Inventario', required: false }
+                        ]
+                      };
+                    }
+                    if (r === 'RER') {
+                      return {
+                        message: "El Régimen Especial de Renta (RER) solo exige llevar 2 registros obligatorios (Ventas y Compras), sin distinción de ingresos.",
+                        isRed: false,
+                        books: [
+                          { name: 'Registro de Ventas e Ingresos', required: true },
+                          { name: 'Registro de Compras', required: true },
+                          { name: 'Libro Diario / Simplificado', required: false },
+                          { name: 'Libro Mayor', required: false },
+                          { name: 'Libro Caja y Bancos', required: false },
+                          { name: 'Libro de Inventarios y Balances', required: false },
+                          { name: 'Registro de Activos Fijos', required: false },
+                          { name: 'Registro de Costos', required: false },
+                          { name: 'Kárdex de Inventario', required: false }
+                        ]
+                      };
+                    }
+                    if (r === 'MYPE') {
+                      if (i <= 300) {
+                        return {
+                          message: "Régimen MYPE (≤ 300 UIT): Obligación simplificada (Ventas, Compras y Libro Diario Simplificado).",
+                          isRed: false,
+                          books: [
+                            { name: 'Registro de Ventas e Ingresos', required: true },
+                            { name: 'Registro de Compras', required: true },
+                            { name: 'Libro Diario Formato Simplificado', required: true },
+                            { name: 'Libro Diario (Completo)', required: false },
+                            { name: 'Libro Mayor', required: false },
+                            { name: 'Libro Caja y Bancos', required: false },
+                            { name: 'Libro de Inventarios y Balances', required: false },
+                            { name: 'Registro de Activos Fijos', required: false },
+                            { name: 'Registro de Costos', required: false },
+                            { name: 'Kárdex de Inventario', required: false }
+                          ]
+                        };
+                      } else if (i <= 500) {
+                        const hasCostos = s === 'MANUFACTURERA';
+                        return {
+                          message: "Régimen MYPE (> 300 a ≤ 500 UIT): Obligado a llevar Libro Diario Completo y Libro Mayor. Registro de Costos es condicional.",
+                          isRed: false,
+                          books: [
+                            { name: 'Registro de Ventas e Ingresos', required: true },
+                            { name: 'Registro de Compras', required: true },
+                            { name: 'Libro Diario (Completo)', required: true },
+                            { name: 'Libro Mayor', required: true },
+                            { name: 'Libro Caja y Bancos', required: false },
+                            { name: 'Libro de Inventarios y Balances', required: false },
+                            { name: 'Registro de Activos Fijos', required: false },
+                            { name: 'Registro de Costos', required: hasCostos, note: hasCostos ? 'Requerido para Manufactura' : 'Solo Manufactura' },
+                            { name: 'Kárdex de Inventario', required: false }
+                          ]
+                        };
+                      } else {
+                        const hasCostos = s === 'MANUFACTURERA';
+                        const hasUnidades = s === 'COMERCIAL' || s === 'MANUFACTURERA';
+                        const hasValorizado = s === 'MANUFACTURERA' || (s === 'COMERCIAL' && i > 1500);
+                        return {
+                          message: "Régimen MYPE (> 500 UIT): Contabilidad Completa y registros auxiliares obligatorios según sector e ingresos.",
+                          isRed: false,
+                          books: [
+                            { name: 'Registro de Ventas e Ingresos', required: true },
+                            { name: 'Registro de Compras', required: true },
+                            { name: 'Libro Diario (Completo)', required: true },
+                            { name: 'Libro Mayor', required: true },
+                            { name: 'Libro Caja y Bancos', required: true },
+                            { name: 'Libro de Inventarios y Balances', required: true },
+                            { name: 'Registro de Activos Fijos', required: true },
+                            { name: 'Registro de Costos', required: hasCostos, note: 'Solo Manufactura' },
+                            { name: 'Inventario Permanente Unidades', required: hasUnidades, note: 'Solo Comercio y Manufactura' },
+                            { name: 'Inventario Permanente Valorizado (Kárdex)', required: hasValorizado, note: 'Manufactura / Comercio > 1500 UIT' }
+                          ]
+                        };
+                      }
+                    }
+                    if (r === 'RG') {
+                      if (i <= 150) {
+                        return {
+                          message: "Régimen General (≤ 150 UIT): Obligación simplificada (Ventas, Compras y Libro Diario Simplificado).",
+                          isRed: false,
+                          books: [
+                            { name: 'Registro de Ventas e Ingresos', required: true },
+                            { name: 'Registro de Compras', required: true },
+                            { name: 'Libro Diario Formato Simplificado', required: true },
+                            { name: 'Libro Diario (Completo)', required: false },
+                            { name: 'Libro Mayor', required: false },
+                            { name: 'Libro Caja y Bancos', required: false },
+                            { name: 'Libro de Inventarios y Balances', required: false },
+                            { name: 'Registro de Activos Fijos', required: false },
+                            { name: 'Registro de Costos', required: false },
+                            { name: 'Kárdex de Inventario', required: false }
+                          ]
+                        };
+                      } else {
+                        const hasCostos = s === 'MANUFACTURERA';
+                        const hasUnidades = s === 'MANUFACTURERA' || (s === 'COMERCIAL' && i > 500);
+                        const hasValorizado = s === 'MANUFACTURERA' || (s === 'COMERCIAL' && i > 1500);
+                        return {
+                          message: "Régimen General (> 150 UIT): Contabilidad Completa y registros auxiliares obligatorios según sector e ingresos.",
+                          isRed: false,
+                          books: [
+                            { name: 'Registro de Ventas e Ingresos', required: true },
+                            { name: 'Registro de Compras', required: true },
+                            { name: 'Libro Diario (Completo)', required: true },
+                            { name: 'Libro Mayor', required: true },
+                            { name: 'Libro Caja y Bancos', required: true },
+                            { name: 'Libro de Inventarios y Balances', required: true },
+                            { name: 'Registro de Activos Fijos', required: true },
+                            { name: 'Registro de Costos', required: hasCostos, note: 'Solo Manufactura' },
+                            { name: 'Inventario Permanente Unidades', required: hasUnidades, note: 'Manufactura / Comercio > 500 UIT' },
+                            { name: 'Inventario Permanente Valorizado (Kárdex)', required: hasValorizado, note: 'Manufactura / Comercio > 1500 UIT' }
+                          ]
+                        };
+                      }
+                    }
+                    return { message: '', books: [], isRed: false };
+                  };
+
+                  const currentRules = getObligationsList();
+
                   return (
-                    <div className="bg-pld-blue/5 border border-pld-blue/15 rounded-xl p-4">
-                      <p className="text-xs text-app-text leading-relaxed font-medium mb-3">{regimen.description}</p>
-                      <div className="flex flex-wrap gap-2">
-                        <span className="text-[10px] tracking-wider uppercase bg-pld-blue/10 text-pld-blue px-3 py-1 rounded-full font-bold">
-                          IR: {regimen.rentaMensual}
-                        </span>
-                        <span className="text-[10px] tracking-wider uppercase bg-app-hover text-app-muted px-3 py-1 rounded-full font-bold border border-app-border">
-                          Límite: {regimen.limiteIngresos}
-                        </span>
+                    <div className="flex flex-col gap-4">
+                      {/* Banner de Mensaje de Obligación */}
+                      <div className={`flex items-start gap-3 p-4 rounded-xl border ${
+                        currentRules.isRed 
+                          ? 'bg-rose-500/10 border-rose-500/25 text-rose-700 dark:text-rose-400' 
+                          : 'bg-pld-blue/5 border-pld-blue/15 text-app-text'
+                      }`}>
+                        <AlertCircle size={18} className="shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-xs font-semibold leading-relaxed">{currentRules.message}</p>
+                        </div>
+                      </div>
+
+                      {/* Lista Detallada de Libros y Estados */}
+                      <div className="bg-app-bg border border-app-border rounded-xl p-4">
+                        <h4 className="text-[10px] font-black uppercase tracking-widest text-app-muted mb-3">
+                          Estado de Obligación de Libros y Registros
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
+                          {currentRules.books.map((b, idx) => (
+                            <div key={idx} className="flex items-center justify-between text-xs py-1 border-b border-app-border/40 last:border-0">
+                              <span className="font-medium text-app-text">{b.name}</span>
+                              <div className="flex items-center gap-2">
+                                {b.note && (
+                                  <span className="text-[8px] uppercase tracking-wider font-bold text-app-muted bg-app-hover px-1.5 py-0.5 rounded border border-app-border">
+                                    {b.note}
+                                  </span>
+                                )}
+                                {b.required ? (
+                                  <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-600 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                                    ✓ Activo
+                                  </span>
+                                ) : (
+                                  <span className="px-2 py-0.5 bg-rose-500/10 text-rose-600 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                                    ✗ Omitido
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   );
