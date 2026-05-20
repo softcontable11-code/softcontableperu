@@ -618,7 +618,7 @@ const SireView: React.FC = () => {
                           ) : <span className="text-app-muted opacity-20">—</span>}
                         </td>
                         <td className="px-6 py-4 text-right pr-8">
-                          <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="flex justify-end gap-1">
                             {item.status === 'ONLY_SUNAT' && (
                               <button 
                                 onClick={() => handleImportToLocal(item.sunat)}
