@@ -43,7 +43,7 @@ export const webApiBridge = {
 
     // --- Database API ---
     dbGetWorkspaces: async () => {
-        const res = await api.get('/api/db/workspaces');
+        const res = await api.get(`/api/db/workspaces?t=${Date.now()}`);
         return res.data.workspaces || [];
     },
     dbSaveWorkspace: async (w: any) => {
@@ -55,7 +55,7 @@ export const webApiBridge = {
         return res.data;
     },
     dbGetWorkspaceData: async (ruc: string) => {
-        const res = await api.get(`/api/db/workspaces/${ruc}`);
+        const res = await api.get(`/api/db/workspaces/${ruc}?t=${Date.now()}`);
         return res.data.data;
     },
     dbExecute: async (sql: string, params: any[]) => {
@@ -96,7 +96,7 @@ export const webApiBridge = {
         return res.data;
     },
     analyticsCCCMetrics: async (ruc: string) => {
-        const res = await api.get(`/api/db/analytics/ccc/${ruc}`);
+        const res = await api.get(`/api/db/analytics/ccc/${ruc}?t=${Date.now()}`);
         return res.data.metrics;
     },
 
@@ -136,7 +136,7 @@ export const webApiBridge = {
         return res.data;
     },
     listarArchivosSire: async () => {
-        const res = await api.get('/api/sire/archivos');
+        const res = await api.get(`/api/sire/archivos?t=${Date.now()}`);
         return res.data.archivos || [];
     },
     eliminarArchivoSire: async (nombre: string) => {
