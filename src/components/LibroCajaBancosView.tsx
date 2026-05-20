@@ -230,6 +230,11 @@ const LibroCajaBancosView: React.FC = () => {
           correlativo: '', fecha: '', glosa: 'TOTAL GENERAL', ctaCodigo: '', ctaDenom: '',
           deudor: totals.deudor,
           acreedor: totals.acreedor
+        },
+        companyInfo: {
+          ruc: currentCompany?.ruc || '',
+          name: currentCompany?.name || 'EMPRESA',
+          period: `${periodoAnio}-${String(periodoMes + 1).padStart(2, '0')}`,
         }
       }, `Libro_CajaBancos_1_1_${periodoAnio}_${String(periodoMes + 1).padStart(2, '0')}`);
     } else {
@@ -264,6 +269,11 @@ const LibroCajaBancosView: React.FC = () => {
           correlativo: '', fecha: '', medioPago: '', glosa: 'TOTAL GENERAL', razonSocial: '', ctaCodigo: '', ctaDenom: '',
           deudor: totals.deudor,
           acreedor: totals.acreedor
+        },
+        companyInfo: {
+          ruc: currentCompany?.ruc || '',
+          name: currentCompany?.name || 'EMPRESA',
+          period: `${periodoAnio}-${String(periodoMes + 1).padStart(2, '0')}`,
         }
       }, `Libro_CajaBancos_1_2_${periodoAnio}_${String(periodoMes + 1).padStart(2, '0')}`);
     }

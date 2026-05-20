@@ -163,6 +163,11 @@ const BalanceView: React.FC = () => {
       totals: {
         concepto: 'TOTAL PASIVO Y PATRIMONIO',
         importe: totalPasivo + totalPatrimonio
+      },
+      companyInfo: {
+        ruc: currentCompany?.ruc || '',
+        name: currentCompany?.name || 'EMPRESA',
+        period: currentCompany?.period || String(new Date().getFullYear()),
       }
     }, 'Estado_Situacion_Financiera');
   };

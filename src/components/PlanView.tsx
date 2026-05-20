@@ -6,7 +6,7 @@ import type { Account } from '../logic/plan';
 import { exportSingleSheet } from '../utils/excelExport';
 
 const PlanView: React.FC = () => {
-  const { plan, addAccount, updateAccount, deleteAccount } = useStore();
+  const { plan, addAccount, updateAccount, deleteAccount, currentCompany } = useStore();
   const [query, setQuery] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingAcc, setEditingAcc] = useState<Account | null>(null);
@@ -135,7 +135,23 @@ const PlanView: React.FC = () => {
             <Plus size={14} /> Nuevo
           </button>
           <button onClick={() => window.print()} className="h-8 px-3 bg-app-bg border border-app-border rounded-lg hover:text-pld-blue transition-colors flex items-center gap-1.5 text-[10px] font-bold text-app-muted"><Printer size={14} /> Imprimir</button>
-          <button onClick={() => exportSingleSheet({ sheetName: 'Plan Contable', title: 'PLAN CONTABLE GENERAL EMPRESARIAL', columns: [{ header: 'CUENTA', key: 'cta', width: 12, alignment: 'center' }, { header: 'DENOMINACIÓN', key: 'description', width: 50 }, { header: 'TIPO', key: 'type', width: 15, alignment: 'center' }, { header: 'AMARRE DEBE', key: 'amarreDebe', width: 14, alignment: 'center' }, { header: 'AMARRE HABER', key: 'amarreHaber', width: 14, alignment: 'center' }], rows: plan }, 'Plan_Contable')} className="h-8 px-3 bg-app-bg border border-app-border rounded-lg hover:text-pld-blue transition-colors flex items-center gap-1.5 text-[10px] font-bold text-app-muted"><FileDown size={14} /> Excel</button>
+          <button onClick={() => exportSingleSheet({
+            sheetName: 'Plan Contable',
+            title: 'PLAN CONTABLE GENERAL EMPRESARIAL',
+            columns: [
+              { header: 'CUENTA', key: 'cta', width: 12, alignment: 'center' },
+              { header: 'DENOMINACIÓN', key: 'description', width: 50 },
+              { header: 'TIPO', key: 'type', width: 15, alignment: 'center' },
+              { header: 'AMARRE DEBE', key: 'amarreDebe', width: 14, alignment: 'center' },
+              { header: 'AMARRE HABER', key: 'amarreHaber', width: 14, alignment: 'center' }
+            ],
+            rows: plan,
+            companyInfo: {
+              ruc: currentCompany?.ruc || '',
+              name: currentCompany?.name || 'EMPRESA',
+              period: currentCompany?.period || String(new Date().getFullYear()),
+            }
+          }, 'Plan_Contable')} className="h-8 px-3 bg-app-bg border border-app-border rounded-lg hover:text-pld-blue transition-colors flex items-center gap-1.5 text-[10px] font-bold text-app-muted"><FileDown size={14} /> Excel</button>
         </div>
       </div>
 

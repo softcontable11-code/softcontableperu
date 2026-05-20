@@ -6,7 +6,7 @@ import { useStore, type Entity } from '../store';
 import Modal from './shared/Modal';
 
 const CliProView: React.FC = () => {
-  const { entities, addEntity, updateEntity, deleteEntity } = useStore();
+  const { entities, addEntity, updateEntity, deleteEntity, currentCompany } = useStore();
   const [query, setQuery] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -125,7 +125,21 @@ const CliProView: React.FC = () => {
               <PlusCircle size={14} /> Nueva Entidad
             </button>
             <button onClick={() => window.print()} className="h-9 px-3 bg-app-bg border border-app-border rounded-lg hover:text-pld-blue transition-colors flex items-center gap-1.5 text-[10px] font-bold text-app-muted"><Printer size={14} /> Imprimir</button>
-            <button onClick={() => exportSingleSheet({ sheetName: 'Directorio', title: 'DIRECTORIO DE CLIENTES Y PROVEEDORES', columns: [{ header: 'TIPO', key: 'tipo', width: 8, alignment: 'center' }, { header: 'RUC/DNI', key: 'ruc', width: 14 }, { header: 'RAZÓN SOCIAL', key: 'descripcion', width: 50 }], rows: entities }, 'Directorio')} className="h-9 px-3 bg-app-bg border border-app-border rounded-lg hover:text-pld-blue transition-colors flex items-center gap-1.5 text-[10px] font-bold text-app-muted"><FileDown size={14} /> Excel</button>
+            <button onClick={() => exportSingleSheet({
+              sheetName: 'Directorio',
+              title: 'DIRECTORIO DE CLIENTES Y PROVEEDORES',
+              columns: [
+                { header: 'TIPO', key: 'tipo', width: 8, alignment: 'center' },
+                { header: 'RUC/DNI', key: 'ruc', width: 14 },
+                { header: 'RAZÓN SOCIAL', key: 'descripcion', width: 50 }
+              ],
+              rows: entities,
+              companyInfo: {
+                ruc: currentCompany?.ruc || '',
+                name: currentCompany?.name || 'EMPRESA',
+                period: currentCompany?.period || String(new Date().getFullYear()),
+              }
+            }, 'Directorio')} className="h-9 px-3 bg-app-bg border border-app-border rounded-lg hover:text-pld-blue transition-colors flex items-center gap-1.5 text-[10px] font-bold text-app-muted"><FileDown size={14} /> Excel</button>
           </div>
         </div>
 

@@ -252,6 +252,11 @@ const FinanceSecondaryView: React.FC = () => {
         totals: {
           concepto: 'SALDO FINAL DE EFECTIVO',
           importe: cashFlowData.saldoFinal
+        },
+        companyInfo: {
+          ruc: currentCompany?.ruc || '',
+          name: currentCompany?.name || 'EMPRESA',
+          period: String(periodoAnio),
         }
       }, `Estado_Flujo_Efectivo_${periodoAnio}`);
     } else if (reportType === '3.19' && patrimonioData) {
@@ -300,7 +305,12 @@ const FinanceSecondaryView: React.FC = () => {
           { header: 'TOTAL PATRIMONIO', key: 'total', width: 20, style: 'currency', alignment: 'right' }
         ],
         rows: [initialRow, ...midRows],
-        totals: finalTotals
+        totals: finalTotals,
+        companyInfo: {
+          ruc: currentCompany?.ruc || '',
+          name: currentCompany?.name || 'EMPRESA',
+          period: String(periodoAnio),
+        }
       }, `Estado_Cambios_Patrimonio_${periodoAnio}`);
     }
   };

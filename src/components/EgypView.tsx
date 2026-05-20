@@ -126,6 +126,11 @@ const EgypView: React.FC = () => {
       totals: {
         concepto: 'UTILIDAD (PÉRDIDA) NETA DEL EJERCICIO',
         importe: currentUtilidadNeta
+      },
+      companyInfo: {
+        ruc: currentCompany?.ruc || '',
+        name: currentCompany?.name || 'EMPRESA',
+        period: currentCompany?.period || String(new Date().getFullYear()),
       }
     }, `Estado_Resultados_${viewMode}`);
   };

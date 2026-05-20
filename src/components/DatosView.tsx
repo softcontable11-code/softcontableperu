@@ -64,6 +64,11 @@ const DatosView: React.FC = () => {
         debe: filteredJournal.reduce((acc, r) => acc + r.debe, 0),
         haber: filteredJournal.reduce((acc, r) => acc + r.haber, 0),
         diferencia: filteredJournal.reduce((acc, r) => acc + (r.debe - r.haber), 0)
+      },
+      companyInfo: {
+        ruc: currentCompany?.ruc || '',
+        name: currentCompany?.name || 'EMPRESA',
+        period: currentCompany?.period || String(new Date().getFullYear()),
       }
     }, 'SQL_Data_Transacciones');
   };

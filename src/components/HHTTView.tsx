@@ -378,6 +378,11 @@ const HHTTView: React.FC = () => {
         gananciaNaturaleza: totals.gananciaNaturaleza + natUtilidadGanancia,
         perdidaFuncion: totals.perdidaFuncion + funUtilidadPerdida,
         gananciaFuncion: totals.gananciaFuncion + funUtilidadGanancia
+      },
+      companyInfo: {
+        ruc: currentCompany?.ruc || '',
+        name: currentCompany?.name || 'EMPRESA',
+        period: currentCompany?.period || String(new Date().getFullYear()),
       }
     }, `Balance_Comprobacion_${digits}_Digitos`);
   };

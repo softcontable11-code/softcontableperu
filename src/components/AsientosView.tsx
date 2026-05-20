@@ -57,7 +57,7 @@ function parseFechaDisplay(fecha: string): { anio: string; mes: string } {
 }
 
 const AsientosView: React.FC = () => {
-  const { plan, asientos, saveAsiento, deleteAsientoById, getNextAsientoNumber, draftAsiento, setDraftAsiento, addAccount, glosasHabituales, saveGlosaHabitual } = useStore();
+  const { plan, asientos, saveAsiento, deleteAsientoById, getNextAsientoNumber, draftAsiento, setDraftAsiento, addAccount, glosasHabituales, saveGlosaHabitual, currentCompany } = useStore();
   
   const [lines, setLines] = useState<AsientoLine[]>(draftAsiento?.lines || []);
   const [currentInput, setCurrentInput] = useState({ cuenta: '', debe: '' as string | number, haber: '' as string | number });
@@ -399,7 +399,27 @@ const AsientosView: React.FC = () => {
             <span className="text-[11px] text-app-muted font-bold">{asientos.length} guardados</span>
             <button onClick={handleNavNext} className="p-1.5 rounded-lg hover:bg-app-hover transition-colors" title="Siguiente"><ChevronRight size={15} className="text-app-muted" /></button>
             <button onClick={() => window.print()} className="h-8 px-3 bg-app-bg border border-app-border rounded-lg hover:text-pld-blue transition-colors flex items-center gap-1.5 text-[10px] font-bold text-app-muted"><Printer size={14} /> Imprimir</button>
-            <button onClick={() => exportSingleSheet({ sheetName: 'Voucher', title: `ASIENTO CONTABLE N° ${header.asiento}`, columns: [{ header: 'CUENTA CONTABLE', key: 'cuenta', width: 18, alignment: 'center' }, { header: 'GLOSA / DETALLE', key: 'detalle', width: 45 }, { header: 'DEBE (S/)', key: 'debe', width: 15, style: 'currency' }, { header: 'HABER (S/)', key: 'haber', width: 15, style: 'currency' }], rows: lines, totals: { cuenta: '', detalle: 'TOTAL GENERAL', debe: lines.reduce((acc, curr) => acc + (Number(curr.debe) || 0), 0), haber: lines.reduce((acc, curr) => acc + (Number(curr.haber) || 0), 0) } }, `Asiento_${header.asiento}`)} className="h-8 px-3 bg-app-bg border border-app-border rounded-lg hover:text-pld-blue transition-colors flex items-center gap-1.5 text-[10px] font-bold text-app-muted"><FileDown size={14} /> Excel</button>
+            <button onClick={() => exportSingleSheet({
+              sheetName: 'Voucher',
+              title: `ASIENTO CONTABLE N° ${header.asiento}`,
+              columns: [
+                { header: 'CUENTA CONTABLE', key: 'cuenta', width: 18, alignment: 'center' },
+                { header: 'GLOSA / DETALLE', key: 'detalle', width: 45 },
+                { header: 'DEBE (S/)', key: 'debe', width: 15, style: 'currency' },
+                { header: 'HABER (S/)', key: 'haber', width: 15, style: 'currency' }
+              ],
+              rows: lines,
+              totals: {
+                cuenta: '', detalle: 'TOTAL GENERAL',
+                debe: lines.reduce((acc, curr) => acc + (Number(curr.debe) || 0), 0),
+                haber: lines.reduce((acc, curr) => acc + (Number(curr.haber) || 0), 0)
+              },
+              companyInfo: {
+                ruc: currentCompany?.ruc || '',
+                name: currentCompany?.name || 'EMPRESA',
+                period: currentCompany?.period || String(new Date().getFullYear()),
+              }
+            }, `Asiento_${header.asiento}`)} className="h-8 px-3 bg-app-bg border border-app-border rounded-lg hover:text-pld-blue transition-colors flex items-center gap-1.5 text-[10px] font-bold text-app-muted"><FileDown size={14} /> Excel</button>
           </div>
         }
       />

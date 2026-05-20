@@ -70,7 +70,25 @@ const CCCDashboard: React.FC = () => {
               <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} /> ACTUALIZAR
             </button>
             <button onClick={() => window.print()} className="h-8 px-3 bg-app-bg border border-app-border rounded-lg hover:text-pld-blue transition-colors flex items-center gap-1.5 text-[10px] font-bold text-app-muted"><Printer size={14} /> Imprimir</button>
-            <button onClick={() => exportSingleSheet({ sheetName: 'Ciclo Operativo (CCC)', title: 'CICLO DE CONVERSIÓN DE EFECTIVO (CCC)', columns: [{ header: 'MÉTRICA / INDICADOR', key: 'name', width: 35 }, { header: 'DÍAS', key: 'days', width: 15, style: 'number', alignment: 'center' }], rows: [{ name: 'DIO - Días de Inventario', days: metrics.dio }, { name: 'DSO - Días de Cobro', days: metrics.dso }, { name: 'DPO - Días de Pago', days: metrics.dpo }, { name: 'CCC - Ciclo Conversión Efectivo', days: metrics.ccc }] }, 'Ciclo_Efectivo_CCC')} className="h-8 px-3 bg-app-bg border border-app-border rounded-lg hover:text-pld-blue transition-colors flex items-center gap-1.5 text-[10px] font-bold text-app-muted"><FileDown size={14} /> Excel</button>
+            <button onClick={() => exportSingleSheet({
+              sheetName: 'Ciclo Operativo (CCC)',
+              title: 'CICLO DE CONVERSIÓN DE EFECTIVO (CCC)',
+              columns: [
+                { header: 'MÉTRICA / INDICADOR', key: 'name', width: 35 },
+                { header: 'DÍAS', key: 'days', width: 15, style: 'number', alignment: 'center' }
+              ],
+              rows: [
+                { name: 'DIO - Días de Inventario', days: metrics.dio },
+                { name: 'DSO - Días de Cobro', days: metrics.dso },
+                { name: 'DPO - Días de Pago', days: metrics.dpo },
+                { name: 'CCC - Ciclo Conversión Efectivo', days: metrics.ccc }
+              ],
+              companyInfo: {
+                ruc: currentCompany?.ruc || '',
+                name: currentCompany?.name || 'EMPRESA',
+                period: currentCompany?.period || String(new Date().getFullYear()),
+              }
+            }, 'Ciclo_Efectivo_CCC')} className="h-8 px-3 bg-app-bg border border-app-border rounded-lg hover:text-pld-blue transition-colors flex items-center gap-1.5 text-[10px] font-bold text-app-muted"><FileDown size={14} /> Excel</button>
           </div>
         }
       />

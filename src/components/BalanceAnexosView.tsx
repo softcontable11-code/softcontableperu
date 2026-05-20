@@ -229,6 +229,11 @@ const BalanceAnexosView: React.FC = () => {
           tipoDoc: '', num: '', nombre: 'TOTAL GENERAL',
           monto: enrichedClientRows.reduce((s, r) => s + r.total, 0),
           fecha: ''
+        },
+        companyInfo: {
+          ruc: currentCompany?.ruc || '',
+          name: currentCompany?.name || 'EMPRESA',
+          period: String(periodoAnio),
         }
       }, `Anexo_3_3_${periodoAnio}`);
     } else if (anexoType === '3.12') {
@@ -254,6 +259,11 @@ const BalanceAnexosView: React.FC = () => {
           tipoDoc: '', num: '', nombre: 'TOTAL GENERAL',
           monto: enrichedProviderRows.reduce((s, r) => s + r.total, 0),
           fecha: ''
+        },
+        companyInfo: {
+          ruc: currentCompany?.ruc || '',
+          name: currentCompany?.name || 'EMPRESA',
+          period: String(periodoAnio),
         }
       }, `Anexo_3_12_${periodoAnio}`);
     } else if (anexoType === '3.7') {
@@ -286,6 +296,11 @@ const BalanceAnexosView: React.FC = () => {
         totals: {
           codigo: '', tipo: '', descripcion: 'TOTAL GENERAL', unidad: '', cantidad: 0, costoUnit: 0,
           costoTotal: source.reduce((s, r) => s + r.costoTotal, 0)
+        },
+        companyInfo: {
+          ruc: currentCompany?.ruc || '',
+          name: currentCompany?.name || 'EMPRESA',
+          period: String(periodoAnio),
         }
       }, `Anexo_3_7_${periodoAnio}`);
     } else {
@@ -309,6 +324,11 @@ const BalanceAnexosView: React.FC = () => {
           cuenta: '', desc: 'TOTAL GENERAL',
           deudor: totalDeudor,
           acreedor: totalAcreedor
+        },
+        companyInfo: {
+          ruc: currentCompany?.ruc || '',
+          name: currentCompany?.name || 'EMPRESA',
+          period: String(periodoAnio),
         }
       }, `Anexo_${anexoType.replace('.', '_')}_${periodoAnio}`);
     }

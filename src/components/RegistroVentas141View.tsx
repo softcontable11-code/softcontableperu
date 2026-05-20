@@ -181,6 +181,11 @@ const RegistroVentasView: React.FC = () => {
         ctaCargo: '',
         total: totals.total,
         tc: ''
+      },
+      companyInfo: {
+        ruc: currentCompany?.ruc || '',
+        name: currentCompany?.name || 'EMPRESA',
+        period: `${periodoAnio}-${String(periodoMes + 1).padStart(2, '0')}`,
       }
     }, `Registro_Ventas_${periodoAnio}_${String(periodoMes + 1).padStart(2, '0')}`);
   };

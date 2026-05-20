@@ -340,6 +340,11 @@ const MovimientosView: React.FC = () => {
           'PDT Calc (Sist)': totals.s.igv - totals.p.igv,
           'PDT Decl (Manual)': monthlyData.reduce((acc, m) => acc + (m.pdt.v - m.pdt.c), 0),
           'Diferencia': (totals.s.igv - totals.p.igv) - monthlyData.reduce((acc, m) => acc + (m.pdt.v - m.pdt.c), 0)
+        },
+        companyInfo: {
+          ruc: currentCompany?.ruc || '',
+          name: currentCompany?.name || 'EMPRESA',
+          period: currentPeriod,
         }
       },
       {
@@ -352,7 +357,12 @@ const MovimientosView: React.FC = () => {
           { header: 'TOTAL', key: 'TOTAL', width: 16, style: 'currency' }
         ],
         rows: ventasCtas,
-        totals: salesTotals
+        totals: salesTotals,
+        companyInfo: {
+          ruc: currentCompany?.ruc || '',
+          name: currentCompany?.name || 'EMPRESA',
+          period: currentPeriod,
+        }
       },
       {
         sheetName: 'Detalle Compras',
@@ -364,7 +374,12 @@ const MovimientosView: React.FC = () => {
           { header: 'TOTAL', key: 'TOTAL', width: 16, style: 'currency' }
         ],
         rows: comprasCtas,
-        totals: purchasesTotals
+        totals: purchasesTotals,
+        companyInfo: {
+          ruc: currentCompany?.ruc || '',
+          name: currentCompany?.name || 'EMPRESA',
+          period: currentPeriod,
+        }
       }
     ], `Reporte_Fiscal_${currentCompany.ruc}_${currentPeriod}`);
   };

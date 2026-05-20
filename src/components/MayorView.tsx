@@ -138,6 +138,11 @@ const MayorView: React.FC = () => {
         debe: grandDebe,
         haber: grandHaber,
         saldo: grandDebe - grandHaber
+      },
+      companyInfo: {
+        ruc: currentCompany?.ruc || '',
+        name: currentCompany?.name || 'EMPRESA',
+        period: `${currentYear}-${dominantMonth}`,
       }
     }, `Libro_Mayor_6_1_${currentYear}_${dominantMonth}`);
   };

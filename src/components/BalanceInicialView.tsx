@@ -204,6 +204,11 @@ export default function BalanceInicialView() {
         seccion: '',
         debe: totals.activo,
         haber: totals.pasivoPat
+      },
+      companyInfo: {
+        ruc: currentCompany?.ruc || '',
+        name: currentCompany?.name || 'EMPRESA',
+        period: currentCompany?.period || String(new Date().getFullYear()),
       }
     }, `Balance_Inicial_${currentCompany?.ruc || 'EMPRESA'}_${currentCompany?.period || 'AÑO'}`);
   };

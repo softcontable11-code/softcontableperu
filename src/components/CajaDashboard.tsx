@@ -294,6 +294,11 @@ const CajaDashboard: React.FC = () => {
         impuestos: cajaMonthlyData.reduce((a, b) => a + (b.egresos.igv + b.egresos.renta), 0),
         totalEgresos: totals.egresos,
         saldoFinal: cajaMonthlyData[11].saldoFinal
+      },
+      companyInfo: {
+        ruc: currentCompany?.ruc || '',
+        name: currentCompany?.name || 'EMPRESA',
+        period: String(currentPeriod),
       }
     }, `Flujo_Caja_${currentCompany.ruc}_${currentPeriod}`);
   };

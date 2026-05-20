@@ -15,7 +15,7 @@ import { exportSingleSheet } from '../utils/excelExport';
 import { toast } from 'react-hot-toast';
 
 const ActivosFijosView: React.FC = () => {
-  const { fixedAssets, saveFixedAsset, deleteFixedAsset } = useStore();
+  const { fixedAssets, saveFixedAsset, deleteFixedAsset, currentCompany } = useStore();
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredAssets = useMemo(() => {
@@ -123,6 +123,11 @@ const ActivosFijosView: React.FC = () => {
         deprec_acum_anterior: filteredAssets.reduce((acc, a) => acc + (a.deprec_acum_anterior || 0), 0),
         deprec_ejercicio: filteredAssets.reduce((acc, a) => acc + (a.deprec_ejercicio || 0), 0),
         depreciacion_acumulada: filteredAssets.reduce((acc, a) => acc + (a.depreciacion_acumulada || 0), 0)
+      },
+      companyInfo: {
+        ruc: currentCompany?.ruc || '',
+        name: currentCompany?.name || 'EMPRESA',
+        period: currentCompany?.period || String(new Date().getFullYear()),
       }
     }, 'SUNAT_Formato_7.1_Activos_Fijos');
   };
@@ -155,7 +160,7 @@ const ActivosFijosView: React.FC = () => {
             <Plus size={14} /> Nuevo Activo
           </button>
           <button onClick={() => window.print()} className="px-5 py-2.5 bg-app-surface text-app-text border border-app-border rounded-xl text-[9px] font-black uppercase tracking-[0.15em] hover:bg-app-hover transition-all flex items-center gap-2"><Printer size={14} /> Imprimir</button>
-          <button onClick={() => exportSingleSheet({ sheetName: 'Activos Fijos', title: 'REGISTRO DE ACTIVOS FIJOS - DETALLE DE LOS ACTIVOS FIJOS REVALORIZADOS Y NO REVALORIZADOS (SUNAT 7.1)', columns: [{ header: 'CÓDIGO', key: 'codigo', width: 14 }, { header: 'CUENTA', key: 'cuenta_activo', width: 10, alignment: 'center' }, { header: 'DESCRIPCIÓN', key: 'descripcion', width: 45 }, { header: 'MARCA', key: 'marca', width: 15 }, { header: 'MODELO', key: 'modelo', width: 15 }, { header: 'SERIE', key: 'serie_placa', width: 18 }, { header: 'SALDO INICIAL', key: 'saldo_inicial', width: 14, style: 'currency' }, { header: 'ADQUISICIONES', key: 'adquisiciones', width: 14, style: 'currency' }, { header: 'MEJORAS', key: 'mejoras', width: 14, style: 'currency' }, { header: 'RET/BAJAS', key: 'retiros_bajas', width: 14, style: 'currency' }, { header: 'HISTÓRICO', key: 'historico', width: 14, style: 'currency' }, { header: 'TASA %', key: 'tasa_depreciacion', width: 10, alignment: 'center' }, { header: 'DEP. EJERCICIO', key: 'deprec_ejercicio', width: 14, style: 'currency' }, { header: 'DEP. ACUMULADA', key: 'depreciacion_acumulada', width: 14, style: 'currency' }], rows: filteredAssets.map(a => ({ ...a, historico: calculateHistorico(a) })) }, 'Activos_Fijos')} className="px-5 py-2.5 bg-app-surface text-app-text border border-app-border rounded-xl text-[9px] font-black uppercase tracking-[0.15em] hover:bg-app-hover transition-all flex items-center gap-2"><FileDown size={14} /> Excel</button>
+          <button onClick={() => exportSingleSheet({ sheetName: 'Activos Fijos', title: 'REGISTRO DE ACTIVOS FIJOS - DETALLE DE LOS ACTIVOS FIJOS REVALORIZADOS Y NO REVALORIZADOS (SUNAT 7.1)', columns: [{ header: 'CÓDIGO', key: 'codigo', width: 14 }, { header: 'CUENTA', key: 'cuenta_activo', width: 10, alignment: 'center' }, { header: 'DESCRIPCIÓN', key: 'descripcion', width: 45 }, { header: 'MARCA', key: 'marca', width: 15 }, { header: 'MODELO', key: 'modelo', width: 15 }, { header: 'SERIE', key: 'serie_placa', width: 18 }, { header: 'SALDO INICIAL', key: 'saldo_inicial', width: 14, style: 'currency' }, { header: 'ADQUISICIONES', key: 'adquisiciones', width: 14, style: 'currency' }, { header: 'MEJORAS', key: 'mejoras', width: 14, style: 'currency' }, { header: 'RET/BAJAS', key: 'retiros_bajas', width: 14, style: 'currency' }, { header: 'HISTÓRICO', key: 'historico', width: 14, style: 'currency' }, { header: 'TASA %', key: 'tasa_depreciacion', width: 10, alignment: 'center' }, { header: 'DEP. EJERCICIO', key: 'deprec_ejercicio', width: 14, style: 'currency' }, { header: 'DEP. ACUMULADA', key: 'depreciacion_acumulada', width: 14, style: 'currency' }], rows: filteredAssets.map(a => ({ ...a, historico: calculateHistorico(a) })), companyInfo: { ruc: currentCompany?.ruc || '', name: currentCompany?.name || 'EMPRESA', period: currentCompany?.period || String(new Date().getFullYear()) } }, 'Activos_Fijos')} className="px-5 py-2.5 bg-app-surface text-app-text border border-app-border rounded-xl text-[9px] font-black uppercase tracking-[0.15em] hover:bg-app-hover transition-all flex items-center gap-2"><FileDown size={14} /> Excel</button>
         </div>
       </div>
 

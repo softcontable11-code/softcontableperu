@@ -130,7 +130,23 @@ const ClientesView: React.FC = () => {
             <Download size={13} /> Exportar
           </button>
           <button onClick={() => window.print()} className="h-8 px-3 bg-app-bg border border-app-border rounded-lg hover:text-pld-blue transition-colors flex items-center gap-1.5 text-[10px] font-bold text-app-muted"><Printer size={13} /> Imprimir</button>
-          <button onClick={() => exportSingleSheet({ sheetName: 'Empresas', title: 'LISTADO DE EMPRESAS REGISTRADAS', columns: [{ header: 'RUC', key: 'ruc', width: 15 }, { header: 'RAZÓN SOCIAL', key: 'name', width: 45 }, { header: 'DIRECCIÓN', key: 'address', width: 40 }, { header: 'UBICACIÓN', key: 'location', width: 35 }, { header: 'PERIODO', key: 'period', width: 10, alignment: 'center' }], rows: workspaceList }, 'Empresas')} className="h-8 px-3 bg-app-bg border border-app-border rounded-lg hover:text-pld-blue transition-colors flex items-center gap-1.5 text-[10px] font-bold text-app-muted"><FileDown size={13} /> Excel</button>
+          <button onClick={() => exportSingleSheet({
+            sheetName: 'Empresas',
+            title: 'LISTADO DE EMPRESAS REGISTRADAS',
+            columns: [
+              { header: 'RUC', key: 'ruc', width: 15 },
+              { header: 'RAZÓN SOCIAL', key: 'name', width: 45 },
+              { header: 'DIRECCIÓN', key: 'address', width: 40 },
+              { header: 'UBICACIÓN', key: 'location', width: 35 },
+              { header: 'PERIODO', key: 'period', width: 10, alignment: 'center' }
+            ],
+            rows: workspaceList,
+            companyInfo: {
+              ruc: currentCompany?.ruc || '',
+              name: currentCompany?.name || 'EMPRESA',
+              period: currentCompany?.period || String(new Date().getFullYear()),
+            }
+          }, 'Empresas')} className="h-8 px-3 bg-app-bg border border-app-border rounded-lg hover:text-pld-blue transition-colors flex items-center gap-1.5 text-[10px] font-bold text-app-muted"><FileDown size={13} /> Excel</button>
         </div>
       </div>
 

@@ -183,6 +183,11 @@ const DiarioView: React.FC = () => {
         cuo: '', fecha: '', glosa: '', libro: '', correlativo: '', refDoc: '', cta: '', desc: 'TOTAL GENERAL',
         debe: totalDebe,
         haber: totalHaber
+      },
+      companyInfo: {
+        ruc: currentCompany?.ruc || '',
+        name: currentCompany?.name || 'EMPRESA',
+        period: `${selectedAnio}-${selectedMes}`,
       }
     }, `Libro_Diario_${selectedAnio}_${selectedMes}`);
   };
