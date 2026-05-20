@@ -10,9 +10,12 @@ import {
   ShieldCheck,
   Calculator,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  FileDown,
+  Printer
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { exportSingleSheet } from '../utils/excelExport';
 
 const PlanillaView: React.FC = () => {
   const { employees, saveEmployee, deleteEmployee, currentCompany, saveAsiento, plan } = useStore();
@@ -249,6 +252,8 @@ const PlanillaView: React.FC = () => {
           >
             <Download size={14} /> Generar PLAME
           </button>
+          <button onClick={() => window.print()} className="px-5 py-2.5 bg-app-surface text-app-text border border-app-border rounded-xl text-[9px] font-black uppercase tracking-[0.15em] shadow-lg hover:bg-app-hover transition-all flex items-center gap-2"><Printer size={14} /> Imprimir</button>
+          <button onClick={() => exportSingleSheet({ sheetName: 'Planilla', title: `PLANILLA DE SUELDOS Y SALARIOS - ${MONTHS[periodoMes]} ${periodoAnio}`, columns: [{ header: 'TRABAJADOR', key: 'nombre', width: 30 }, { header: 'DNI', key: 'dni', width: 14 }, { header: 'PUESTO', key: 'puesto', width: 20 }, { header: 'R. PENSIÓN', key: 'regimen_pensionario', width: 15 }, { header: 'SUELDO BÁSICO', key: 'sueldo_basico', width: 14, style: 'currency' }, { header: 'NETO', key: 'neto', width: 14, style: 'currency' }], rows: employees.map(e => ({ ...e, neto: calculateTotalRemuneracion(e) - calculateDescuentos(e) })) }, `Planilla_${MONTHS[periodoMes]}_${periodoAnio}`)} className="px-5 py-2.5 bg-app-surface text-app-text border border-app-border rounded-xl text-[9px] font-black uppercase tracking-[0.15em] shadow-lg hover:bg-app-hover transition-all flex items-center gap-2"><FileDown size={14} /> Excel</button>
         </div>
       </div>
 

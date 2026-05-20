@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { BookText, Plus, Trash2, ChevronLeft, ChevronRight, CheckCircle, X, Edit2, PlusCircle } from 'lucide-react';
+import { BookText, Plus, Trash2, ChevronLeft, ChevronRight, CheckCircle, X, Edit2, PlusCircle, FileDown, Printer } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { DataTable } from './DataTable';
 import { useStore } from '../store';
 import type { AsientoCompleto, AsientoLine } from '../store';
 import PageHeader from './ui/PageHeader';
+import { exportSingleSheet } from '../utils/excelExport';
 import ActionBar from './ui/ActionBar';
 import FormField from './ui/FormField';
 import Button from './ui/Button';
@@ -397,6 +398,8 @@ const AsientosView: React.FC = () => {
             <button onClick={handleNavPrev} className="p-1.5 rounded-lg hover:bg-app-hover transition-colors" title="Anterior"><ChevronLeft size={15} className="text-app-muted" /></button>
             <span className="text-[11px] text-app-muted font-bold">{asientos.length} guardados</span>
             <button onClick={handleNavNext} className="p-1.5 rounded-lg hover:bg-app-hover transition-colors" title="Siguiente"><ChevronRight size={15} className="text-app-muted" /></button>
+            <button onClick={() => window.print()} className="h-8 px-3 bg-app-bg border border-app-border rounded-lg hover:text-pld-blue transition-colors flex items-center gap-1.5 text-[10px] font-bold text-app-muted"><Printer size={14} /> Imprimir</button>
+            <button onClick={() => exportSingleSheet({ sheetName: 'Voucher', title: `ASIENTO CONTABLE N° ${header.asiento}`, columns: [{ header: 'CUENTA CONTABLE', key: 'cuenta', width: 18, alignment: 'center' }, { header: 'GLOSA / DETALLE', key: 'detalle', width: 45 }, { header: 'DEBE (S/)', key: 'debe', width: 15, style: 'currency' }, { header: 'HABER (S/)', key: 'haber', width: 15, style: 'currency' }], rows: lines, totals: { cuenta: '', detalle: 'TOTAL GENERAL', debe: lines.reduce((acc, curr) => acc + (Number(curr.debe) || 0), 0), haber: lines.reduce((acc, curr) => acc + (Number(curr.haber) || 0), 0) } }, `Asiento_${header.asiento}`)} className="h-8 px-3 bg-app-bg border border-app-border rounded-lg hover:text-pld-blue transition-colors flex items-center gap-1.5 text-[10px] font-bold text-app-muted"><FileDown size={14} /> Excel</button>
           </div>
         }
       />

@@ -1,9 +1,10 @@
 import React, { useState, useRef } from 'react';
 import {
   Building2, Plus, Trash2, ArrowRightCircle, Download, Upload,
-  CheckCircle2, Loader2, Search, HardDrive, Hash, AlertCircle 
+  CheckCircle2, Loader2, Search, HardDrive, Hash, AlertCircle, FileDown, Printer 
 } from 'lucide-react';
 import { useStore } from '../store';
+import { exportSingleSheet } from '../utils/excelExport';
 import ConfirmModal from './shared/ConfirmModal';
 
 const ClientesView: React.FC = () => {
@@ -128,6 +129,8 @@ const ClientesView: React.FC = () => {
             className="h-8 bg-pld-blue hover:bg-blue-700 text-white transition-all rounded-xl text-[10px] font-bold uppercase flex items-center gap-1.5 px-3 shadow-sm shadow-pld-blue/20">
             <Download size={13} /> Exportar
           </button>
+          <button onClick={() => window.print()} className="h-8 px-3 bg-app-bg border border-app-border rounded-lg hover:text-pld-blue transition-colors flex items-center gap-1.5 text-[10px] font-bold text-app-muted"><Printer size={13} /> Imprimir</button>
+          <button onClick={() => exportSingleSheet({ sheetName: 'Empresas', title: 'LISTADO DE EMPRESAS REGISTRADAS', columns: [{ header: 'RUC', key: 'ruc', width: 15 }, { header: 'RAZÓN SOCIAL', key: 'name', width: 45 }, { header: 'DIRECCIÓN', key: 'address', width: 40 }, { header: 'UBICACIÓN', key: 'location', width: 35 }, { header: 'PERIODO', key: 'period', width: 10, alignment: 'center' }], rows: workspaceList }, 'Empresas')} className="h-8 px-3 bg-app-bg border border-app-border rounded-lg hover:text-pld-blue transition-colors flex items-center gap-1.5 text-[10px] font-bold text-app-muted"><FileDown size={13} /> Excel</button>
         </div>
       </div>
 

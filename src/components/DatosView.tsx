@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Database, Search, Download } from 'lucide-react';
+import { Database, Search, FileDown, Printer } from 'lucide-react';
 import { DataTable } from './DataTable';
 import { useStore } from '../store';
 import { exportRawDataToXLSX } from '../utils/export';
@@ -113,9 +113,8 @@ const DatosView: React.FC = () => {
              <option value="HONORARIO">Honorarios</option>
              <option value="ASIENTO">Asientos</option>
            </select>
-           <button onClick={handleExport} className="h-8 px-3 bg-pld-blue/10 hover:bg-pld-blue hover:text-white rounded-lg border border-pld-blue/20 text-pld-blue transition-all text-app-muted" title="Exportar">
-              <Download size={14} />
-           </button>
+            <button onClick={() => window.print()} className="h-8 px-3 bg-app-bg border border-app-border rounded-lg hover:text-pld-blue transition-colors flex items-center gap-1.5 text-[10px] font-bold text-app-muted"><Printer size={14} /> Imprimir</button>
+            <button onClick={handleExport} className="h-8 px-3 bg-app-bg border border-app-border rounded-lg hover:text-pld-blue transition-colors flex items-center gap-1.5 text-[10px] font-bold text-app-muted"><FileDown size={14} /> Excel</button>
         </div>
       </div>
 

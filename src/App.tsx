@@ -1,4 +1,5 @@
 import React, { useState, useEffect, Suspense, useRef } from 'react';
+import { generateMassiveWorkbook } from './utils/massiveExport';
 import { useStore } from './store';
 import { runMigration } from './utils/migrationRunner';
 import { toast, Toaster } from 'react-hot-toast';
@@ -71,7 +72,8 @@ import {
   Package,
   HardDrive,
   FileSearch,
-  TrendingUp
+  TrendingUp,
+  FileSpreadsheet
 } from 'lucide-react';
 
 // ─── Types ───
@@ -275,6 +277,7 @@ const App: React.FC = () => {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const [isBackingUp, setIsBackingUp] = useState(false);
+  const [isExportingMassive, setIsExportingMassive] = useState(false);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -344,6 +347,21 @@ const App: React.FC = () => {
       toast.error("Error al crear el respaldo.", { id: loadingToast });
     } finally {
       setIsBackingUp(false);
+    }
+  };
+
+  const handleMassiveExport = async () => {
+    const loadingToast = toast.loading('Generando libro contable completo...');
+    setIsExportingMassive(true);
+    try {
+      const storeState = useStore.getState();
+      const sheetCount = await generateMassiveWorkbook(storeState);
+      toast.success(`¡Excel masivo generado con ${sheetCount} hojas!`, { id: loadingToast, duration: 5000 });
+    } catch (error: any) {
+      console.error('Error en exportación masiva:', error);
+      toast.error(`Error al generar Excel: ${error.message}`, { id: loadingToast });
+    } finally {
+      setIsExportingMassive(false);
     }
   };
 
@@ -601,6 +619,23 @@ const App: React.FC = () => {
                 </span>
               </button>
             )}
+
+            {/* Massive Excel Download */}
+            <button
+              onClick={handleMassiveExport}
+              disabled={isExportingMassive}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all border ${
+                isExportingMassive
+                  ? 'bg-app-bg text-app-muted border-app-border cursor-not-allowed'
+                  : 'bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 border-blue-500/20'
+              }`}
+              title="Descargar libro contable completo en Excel"
+            >
+              {isExportingMassive ? <Loader2 size={15} className="animate-spin" /> : <FileSpreadsheet size={15} />}
+              <span className="text-[10px] font-bold uppercase tracking-wider hidden md:block">
+                {isExportingMassive ? 'Generando...' : 'Excel Masivo'}
+              </span>
+            </button>
 
             <div className="w-px h-8 bg-app-border hidden sm:block" />
 

@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { BookOpen, Search, Package, TrendingUp, Activity, FileText, Download, PlusCircle, Trash2, Edit } from 'lucide-react';
+import { BookOpen, Search, Package, TrendingUp, Activity, FileText, Download, PlusCircle, Trash2, Edit, FileDown, Printer } from 'lucide-react';
+import { exportSingleSheet } from '../utils/excelExport';
 import { useStore, type InventoryMovement } from '../store';
 import PageHeader from './ui/PageHeader';
 import { DataTable } from './DataTable';
@@ -159,6 +160,8 @@ const KardexView: React.FC = () => {
             <button className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all shadow-lg shadow-emerald-600/20">
               <Download size={14} /> EXPORTAR PDF (13.1)
             </button>
+            <button onClick={() => window.print()} className="h-8 px-3 bg-app-bg border border-app-border rounded-lg hover:text-pld-blue transition-colors flex items-center gap-1.5 text-[10px] font-bold text-app-muted"><Printer size={14} /> Imprimir</button>
+            <button onClick={() => { if (!selectedProduct || movements.length === 0) return; exportSingleSheet({ sheetName: 'Kardex', title: `KÁRDEX VALORIZADO - ${selectedProduct.name}`, columns: [{ header: 'FECHA', key: 'fecha', width: 12 }, { header: 'TIPO', key: 'tipo_doc', width: 8, alignment: 'center' }, { header: 'SERIE', key: 'serie', width: 10 }, { header: 'NÚMERO', key: 'numero', width: 12 }, { header: 'ENT. CANT', key: 'cantidad_in', width: 12, style: 'number' }, { header: 'ENT. TOTAL', key: 'total_in', width: 14, style: 'currency' }, { header: 'SAL. CANT', key: 'cantidad_out', width: 12, style: 'number' }, { header: 'SAL. TOTAL', key: 'total_out', width: 14, style: 'currency' }, { header: 'SALDO CANT', key: 'cantidad_saldo', width: 12, style: 'number' }, { header: 'SALDO TOTAL', key: 'total_saldo', width: 14, style: 'currency' }], rows: movements }, `Kardex_${selectedProduct.code}`); }} className="h-8 px-3 bg-app-bg border border-app-border rounded-lg hover:text-pld-blue transition-colors flex items-center gap-1.5 text-[10px] font-bold text-app-muted"><FileDown size={14} /> Excel</button>
           </div>
         }
       />

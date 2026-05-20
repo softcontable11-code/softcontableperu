@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Trash2 } from 'lucide-react';
+import { Users, Trash2, FileDown, Printer } from 'lucide-react';
+import { exportSingleSheet } from '../utils/excelExport';
 import { useStore } from '../store';
 import type { HonorarioEntry } from '../store';
 import DecimalInput from './shared/DecimalInput';
@@ -109,6 +110,12 @@ const HonorariosView: React.FC = () => {
           <span className="ml-2 bg-app-bg px-3 py-1 rounded-full border border-app-border text-xs font-mono font-bold text-pld-blue">
             N° {form.registro}
           </span>
+        }
+        actions={
+          <div className="flex gap-2">
+            <button onClick={() => window.print()} className="h-8 px-3 bg-app-bg border border-app-border rounded-lg hover:text-pld-blue transition-colors flex items-center gap-1.5 text-[10px] font-bold text-app-muted"><Printer size={14} /> Imprimir</button>
+            <button onClick={() => exportSingleSheet({ sheetName: 'Honorarios', title: 'REGISTRO DE HONORARIOS', columns: [{ header: 'N°', key: 'registro', width: 22 }, { header: 'FECHA', key: 'fecha', width: 12 }, { header: 'SERIE', key: 'serie', width: 8 }, { header: 'NÚMERO', key: 'numero', width: 12 }, { header: 'RUC/DNI', key: 'doc_num', width: 14 }, { header: 'NOMBRE', key: 'nombre', width: 35 }, { header: 'HONORARIOS', key: 'bi', width: 14, style: 'currency' }, { header: 'RETENCIÓN', key: 'retencion', width: 14, style: 'currency' }, { header: 'NETO', key: 'total', width: 14, style: 'currency' }], rows: honorarios, totals: { registro: '', fecha: '', serie: '', numero: '', doc_num: '', nombre: 'TOTALES', bi: honorarios.reduce((s,h) => s + h.bi, 0), retencion: honorarios.reduce((s,h) => s + h.retencion, 0), total: honorarios.reduce((s,h) => s + h.total, 0) } }, 'Honorarios')} className="h-8 px-3 bg-app-bg border border-app-border rounded-lg hover:text-pld-blue transition-colors flex items-center gap-1.5 text-[10px] font-bold text-app-muted"><FileDown size={14} /> Excel</button>
+          </div>
         }
       />
 

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Search, PlusCircle, Users, Edit2, Trash2, Globe, FileText, Loader2 } from 'lucide-react';
+import { Search, PlusCircle, Users, Edit2, Trash2, Globe, FileText, Loader2, FileDown, Printer } from 'lucide-react';
+import { exportSingleSheet } from '../utils/excelExport';
 import { DataTable } from './DataTable';
 import { useStore, type Entity } from '../store';
 import Modal from './shared/Modal';
@@ -123,6 +124,8 @@ const CliProView: React.FC = () => {
               className="h-9 bg-pld-blue hover:bg-blue-700 text-white font-bold px-4 rounded-xl flex items-center gap-2 transition-all text-[10px] uppercase tracking-wider shadow-sm shadow-pld-blue/20 shrink-0">
               <PlusCircle size={14} /> Nueva Entidad
             </button>
+            <button onClick={() => window.print()} className="h-9 px-3 bg-app-bg border border-app-border rounded-lg hover:text-pld-blue transition-colors flex items-center gap-1.5 text-[10px] font-bold text-app-muted"><Printer size={14} /> Imprimir</button>
+            <button onClick={() => exportSingleSheet({ sheetName: 'Directorio', title: 'DIRECTORIO DE CLIENTES Y PROVEEDORES', columns: [{ header: 'TIPO', key: 'tipo', width: 8, alignment: 'center' }, { header: 'RUC/DNI', key: 'ruc', width: 14 }, { header: 'RAZÓN SOCIAL', key: 'descripcion', width: 50 }], rows: entities }, 'Directorio')} className="h-9 px-3 bg-app-bg border border-app-border rounded-lg hover:text-pld-blue transition-colors flex items-center gap-1.5 text-[10px] font-bold text-app-muted"><FileDown size={14} /> Excel</button>
           </div>
         </div>
 

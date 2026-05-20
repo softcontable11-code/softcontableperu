@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Scale, ArrowLeftRight, PieChart, Plus, Trash2 } from 'lucide-react';
+import { Scale, ArrowLeftRight, PieChart, Plus, Trash2, FileDown, Printer } from 'lucide-react';
+import { exportSingleSheet } from '../utils/excelExport';
 import { DataTable } from './DataTable';
 import { useStore  } from '../store';
 import type { CostEntry } from '../store';
@@ -107,6 +108,10 @@ const CostosView: React.FC = () => {
              <PieChart size={12} /> Detalle
            </button>
         </div>
+         <div className="flex items-center gap-2">
+            <button onClick={() => window.print()} className="h-8 px-3 bg-app-bg border border-app-border rounded-lg hover:text-pld-blue transition-colors flex items-center gap-1.5 text-[10px] font-bold text-app-muted"><Printer size={14} /> Imprimir</button>
+            <button onClick={() => exportSingleSheet({ sheetName: 'Centros de Costo', title: 'CENTROS DE COSTO', columns: [{ header: 'CÓDIGO', key: 'codigo', width: 12, alignment: 'center' }, { header: 'DESCRIPCIÓN', key: 'descripcion', width: 45 }, { header: '%', key: 'porcentaje', width: 10, style: 'number', alignment: 'center' }], rows: costs }, 'Centros_Costo')} className="h-8 px-3 bg-app-bg border border-app-border rounded-lg hover:text-pld-blue transition-colors flex items-center gap-1.5 text-[10px] font-bold text-app-muted"><FileDown size={14} /> Excel</button>
+         </div>
       </div>
 
       {/* Main Table Area */}

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Activity, TrendingUp, TrendingDown, Clock, DollarSign, RefreshCw, Package, Users, Landmark, ArrowRight } from 'lucide-react';
+import { Activity, TrendingUp, TrendingDown, Clock, DollarSign, RefreshCw, Package, Users, Landmark, ArrowRight, FileDown, Printer } from 'lucide-react';
 import { useStore } from '../store';
 import PageHeader from './ui/PageHeader';
 import { toast } from 'react-hot-toast';
+import { exportSingleSheet } from '../utils/excelExport';
 
 interface CCCMetrics {
   dio: number;
@@ -63,10 +64,14 @@ const CCCDashboard: React.FC = () => {
         title="Ciclo de Conversión de Efectivo (CCC)"
         subtitle="Cash Conversion Cycle — Lawrence Gitman | CCC = DIO + DSO − DPO"
         actions={
-          <button onClick={loadMetrics} disabled={isLoading}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50">
-            <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} /> ACTUALIZAR
-          </button>
+          <div className="flex gap-2">
+            <button onClick={loadMetrics} disabled={isLoading}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50">
+              <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} /> ACTUALIZAR
+            </button>
+            <button onClick={() => window.print()} className="h-8 px-3 bg-app-bg border border-app-border rounded-lg hover:text-pld-blue transition-colors flex items-center gap-1.5 text-[10px] font-bold text-app-muted"><Printer size={14} /> Imprimir</button>
+            <button onClick={() => exportSingleSheet({ sheetName: 'Ciclo Operativo (CCC)', title: 'CICLO DE CONVERSIÓN DE EFECTIVO (CCC)', columns: [{ header: 'MÉTRICA / INDICADOR', key: 'name', width: 35 }, { header: 'DÍAS', key: 'days', width: 15, style: 'number', alignment: 'center' }], rows: [{ name: 'DIO - Días de Inventario', days: metrics.dio }, { name: 'DSO - Días de Cobro', days: metrics.dso }, { name: 'DPO - Días de Pago', days: metrics.dpo }, { name: 'CCC - Ciclo Conversión Efectivo', days: metrics.ccc }] }, 'Ciclo_Efectivo_CCC')} className="h-8 px-3 bg-app-bg border border-app-border rounded-lg hover:text-pld-blue transition-colors flex items-center gap-1.5 text-[10px] font-bold text-app-muted"><FileDown size={14} /> Excel</button>
+          </div>
         }
       />
 
